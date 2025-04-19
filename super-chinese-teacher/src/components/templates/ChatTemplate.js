@@ -1,9 +1,11 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import ChatHeader from '../molecules/ChatHeader';
 import MessageList from '../organisms/MessageList';
 import ChatFooter from '../molecules/ChatFooter';
 import ApiKeyForm from '../molecules/ApiKeyForm';
 import Typography from '../atoms/Typography';
+import Button from '../atoms/Button';
 import { useChat } from '../../context/ChatContext';
 import './ChatTemplate.css';
 
@@ -78,6 +80,14 @@ const ChatTemplate = ({ onBackClick, teacherName = "Super Chinese Tutor" }) => {
             </Typography>
           </div>
         )}
+        
+        <div className="chat-actions">
+          <Link to="/models" className="models-link">
+            <Button variant="secondary" size="small" className="models-button">
+              View 3D Character Models
+            </Button>
+          </Link>
+        </div>
         
         <MessageList 
           messages={messages}

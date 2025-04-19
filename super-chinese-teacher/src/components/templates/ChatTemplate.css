@@ -174,4 +174,27 @@
     height: 100vh;
     border-radius: 0;
   }
+}
+
+.chat-actions {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0;
+  padding: 10px;
+}
+
+.models-link {
+  text-decoration: none;
+}
+
+.models-button {
+  background-color: rgba(245, 198, 66, 0.2);
+  color: var(--primary-color);
+  border: 1px solid rgba(245, 198, 66, 0.5);
+  transition: all 0.3s ease;
+}
+
+.models-button:hover {
+  background-color: rgba(245, 198, 66, 0.3);
+  transform: translateY(-2px);
 } 

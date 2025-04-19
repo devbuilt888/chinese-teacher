@@ -16,6 +16,31 @@ model-viewer {
   height: 100%;
   --poster-color: transparent;
   background-color: transparent;
+  
+  /* Hide all interaction UI elements */
+  --interaction-prompt: none;
+  --interaction-prompt-color: transparent;
+  --interaction-prompt-opacity: 0;
+  --interaction-prompt-scale: 0;
+  --progress-bar-height: 0;
+  --progress-bar-color: transparent;
+  --progress-mask: none;
+  --progress-bar-size: 0;
+  
+  /* Set cursor to default to avoid indicating interactivity */
+  cursor: default !important;
+}
+
+/* Hide any standard UI components */
+model-viewer::part(default-progress-bar),
+model-viewer::part(default-ar-button),
+model-viewer::part(default-ar-prompt),
+model-viewer::part(poster),
+model-viewer::part(default-error),
+model-viewer::part(default-interaction-prompt) {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
 }
 
 .model-viewer-loading {

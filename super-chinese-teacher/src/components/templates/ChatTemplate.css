@@ -32,7 +32,9 @@
   flex-grow: 1;
   overflow: hidden;
   position: relative;
-  z-index: 1;
+  z-index: 2;
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(2px);
 }
 
 .chat-api-key-container {

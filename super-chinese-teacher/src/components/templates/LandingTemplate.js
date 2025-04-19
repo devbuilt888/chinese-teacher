@@ -15,7 +15,7 @@ const LandingTemplate = ({ onStartClick }) => {
           <Typography variant="h1" color="white" align="center" className="heading-xl landing-title">
             Super Chinese Tutor
           </Typography>
-          <Typography variant="subtitle1" color="primary" align="center" className="landing-subtitle">
+          <Typography variant="subtitle1" color="dark" align="center" className="landing-subtitle">
             Master Mandarin with our AI-powered language tutor
           </Typography>
         </div>

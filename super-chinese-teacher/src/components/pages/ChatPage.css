@@ -7,6 +7,7 @@
   align-items: center;
   overflow: hidden;
   background: linear-gradient(135deg, #f0f0f0 0%, #e6e6e6 100%);
+  padding: 20px 0; /* Add padding to give space at top and bottom */
 }
 
 .chat-container {
@@ -14,10 +15,13 @@
   z-index: 5;
   width: 100%;
   max-width: 100%;
-  height: 100vh;
+  height: auto; /* Change from 100vh to auto */
+  min-height: calc(100vh - 40px); /* Account for padding */
+  max-height: calc(100vh - 40px); /* Ensure it doesn't overflow */
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow: visible; /* Allow content to be visible */
 }
 
 /* Add a subtle pattern overlay */

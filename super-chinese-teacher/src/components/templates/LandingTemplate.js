@@ -1,11 +1,14 @@
 import React from 'react';
 import Typography from '../atoms/Typography';
 import Button from '../atoms/Button';
+import FloatingModelsContainer from '../organisms/FloatingModelsContainer';
 import './LandingTemplate.css';
 
 const LandingTemplate = ({ onStartClick }) => {
   return (
     <div className="landing-template">
+      <FloatingModelsContainer />
+      
       <div className="landing-content glass-card">
         <div className="landing-header">
           <div className="chinese-icon">汉语</div>

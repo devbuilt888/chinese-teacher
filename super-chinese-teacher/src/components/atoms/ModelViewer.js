@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './ModelViewer.css';
 
 const ModelViewer = ({ 
@@ -11,6 +11,7 @@ const ModelViewer = ({
   className = "" 
 }) => {
   const modelRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Load the model-viewer web component script if it's not already loaded
@@ -26,6 +27,27 @@ const ModelViewer = ({
     }
   }, []);
 
+  useEffect(() => {
+    // Set up the load event listener for the model-viewer
+    const modelViewer = modelRef.current;
+    if (modelViewer) {
+      const handleLoaded = () => {
+        setIsLoading(false);
+      };
+      
+      modelViewer.addEventListener('load', handleLoaded);
+      
+      // Check if already loaded
+      if (modelViewer.loaded) {
+        setIsLoading(false);
+      }
+      
+      return () => {
+        modelViewer.removeEventListener('load', handleLoaded);
+      };
+    }
+  }, [modelRef]);
+
   return (
     <div className={`model-viewer-container ${className}`} style={{ width, height }}>
       <model-viewer
@@ -38,10 +60,11 @@ const ModelViewer = ({
         exposure="0.5"
         style={{ width: "100%", height: "100%" }}
       >
-        <div className="model-viewer-loading">
-          <div className="spinner"></div>
-          <div>Loading 3D model...</div>
-        </div>
+        {isLoading && (
+          <div className="model-viewer-loading">
+            <div className="spinner"></div>
+          </div>
+        )}
       </model-viewer>
     </div>
   );

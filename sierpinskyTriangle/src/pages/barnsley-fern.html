@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barnsley Fern Editor</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/fractal-pages.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/header-fix.css">
+</head>
+<body>
+    <header>
+        <h1>Barnsley Fern Editor</h1>
+    </header>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="editor-card">
+                <div class="card-header">
+                    <h2>Barnsley Fern Editor</h2>
+        </div>
+                <div class="canvas-container">
+                    <canvas id="fern-canvas" width="800" height="600"></canvas>
+                </div>
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="iterations-input">Iterations</label>
+                        <input type="number" id="iterations-input" min="10000" max="500000" step="10000" value="50000">
+                        <input type="range" id="iterations-range" min="10000" max="500000" step="10000" value="50000">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="color-select">Color Scheme</label>
+                        <select id="color-select">
+                            <option value="green">Green</option>
+                            <option value="neon">Neon</option>
+                            <option value="rainbow">Rainbow</option>
+                            <option value="fire">Fire</option>
+                            <option value="cool">Cool</option>
+                            <option value="monochrome">Monochrome</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="speed-input">Animation Speed</label>
+                        <input type="number" id="speed-input" min="1" max="5000" step="100" value="1000">
+                        <input type="range" id="speed-range" min="1" max="5000" step="100" value="1000">
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <div class="button-row">
+                        <button id="generate-button"><span>Generate</span></button>
+                        <button id="animate-button"><span>Animate</span></button>
+                        <button id="reset-button"><span>Reset</span></button>
+                        <button id="export-button"><span>Export Image</span></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>About the Barnsley Fern</h3>
+                <p>
+                    The Barnsley Fern is a fascinating biologically-inspired fractal that remarkably resembles a natural fern.
+                    Created by mathematician Michael Barnsley in 1988, it uses a system of affine transformations applied
+                    probabilistically to create a realistic fern-like pattern.
+                </p>
+                
+                <p>
+                    Unlike other chaos game fractals that use simple rules, the Barnsley Fern employs multiple transformations
+                    with different probabilities to create its distinctive shape. Each part of the fern (stem, leaflets) is
+                    created by specific transformations, resulting in a remarkably life-like structure.
+                </p>
+                
+                <h3>How It Works</h3>
+                <p>
+                    The Barnsley Fern uses four affine transformations, each with a specific probability:
+                </p>
+                <ol>
+                    <li><strong>Stem transformation (1%)</strong>: Creates the main stem</li>
+                    <li><strong>Successive smaller leaflets (85%)</strong>: Creates the core fern structure</li>
+                    <li><strong>Largest left leaflet (7%)</strong>: Creates the left sidebranch</li>
+                    <li><strong>Largest right leaflet (7%)</strong>: Creates the right sidebranch</li>
+                </ol>
+                
+                <h3>Mathematical Formula</h3>
+                <div class="formula">
+                    x_{n+1} = a_i·x_n + b_i·y_n + e_i
+                    y_{n+1} = c_i·x_n + d_i·y_n + f_i
+                    
+                    Where:
+                    - i is chosen with probability p_i
+                    - The coefficients define each transformation
+                </div>
+                
+                <p>
+                    What makes the Barnsley Fern special is how these simple mathematical transformations
+                    create something that looks so organic and natural, demonstrating how complex structures
+                    in nature might arise from relatively simple mathematical rules.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <button class="return-button" title="Return to Dashboard" onclick="window.location.href='/'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5"></path>
+            <path d="M12 19l-7-7 7-7"></path>
+        </svg>
+    </button>
+    
+    <!-- Debug panel -->
+    <div id="debug-info" class="debug-info"></div>
+
+    <script src="/main.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Canvas setup
+            const canvas = document.getElementById('fern-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // UI elements
+            const iterationsInput = document.getElementById('iterations-input');
+            const iterationsRange = document.getElementById('iterations-range');
+            const colorSelect = document.getElementById('color-select');
+            const speedInput = document.getElementById('speed-input');
+            const speedRange = document.getElementById('speed-range');
+            const generateButton = document.getElementById('generate-button');
+            const animateButton = document.getElementById('animate-button');
+            const resetButton = document.getElementById('reset-button');
+            const exportButton = document.getElementById('export-button');
+            
+            // Animation variables
+            let animationId = null;
+            let isAnimating = false;
+            
+            // Sync range and number inputs
+            iterationsRange.addEventListener('input', () => {
+                iterationsInput.value = iterationsRange.value;
+            });
+            
+            iterationsInput.addEventListener('input', () => {
+                iterationsRange.value = iterationsInput.value;
+            });
+            
+            speedRange.addEventListener('input', () => {
+                speedInput.value = speedRange.value;
+            });
+            
+            speedInput.addEventListener('input', () => {
+                speedRange.value = speedInput.value;
+            });
+            
+            // Color schemes
+            const colorSchemes = {
+                green: ['#1AFF1A', '#00CC00', '#33FF33', '#00FF00', '#008800'],
+                neon: ['#00ffff', '#ff00ff', '#00ff00', '#ffff00', '#ff00ff', '#00ffff'],
+                rainbow: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082'],
+                fire: ['#ff0000', '#ff5a00', '#ff9a00', '#ffce00', '#ffe808', '#ff0000'],
+                cool: ['#0077b6', '#00b4d8', '#90e0ef', '#caf0f8', '#48cae4', '#023e8a'],
+                monochrome: ['#ffffff', '#dddddd', '#bbbbbb', '#999999', '#666666', '#333333']
+            };
+            
+            // Resize canvas to maintain aspect ratio
+            function resizeCanvas() {
+                const container = canvas.parentElement;
+                const containerWidth = container.clientWidth - 40; // Accounting for padding
+                const aspectRatio = canvas.width / canvas.height;
+                
+                // Set new canvas display dimensions
+                if (containerWidth < canvas.width) {
+                    canvas.style.width = containerWidth + 'px';
+                    canvas.style.height = (containerWidth / aspectRatio) + 'px';
+                } else {
+                    canvas.style.width = '';
+                    canvas.style.height = '';
+                }
+            }
+            
+            // Initial resize and listen for window resize
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Clear the canvas
+            function clearCanvas() {
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // Define the transformations for Barnsley fern
+            const transformations = [
+                { prob: 0.01, a: 0.00, b: 0.00, c: 0.00, d: 0.16, e: 0.00, f: 0.00, color: '#1AFF1A' }, // Stem
+                { prob: 0.85, a: 0.85, b: 0.04, c: -0.04, d: 0.85, e: 0.00, f: 1.60, color: '#00CC00' }, // Successive smaller leaflets
+                { prob: 0.07, a: 0.20, b: -0.26, c: 0.23, d: 0.22, e: 0.00, f: 1.60, color: '#33FF33' }, // Largest left leaflet
+                { prob: 0.07, a: -0.15, b: 0.28, c: 0.26, d: 0.24, e: 0.00, f: 0.44, color: '#00FF00' }  // Largest right leaflet
+            ];
+            
+            // Apply a transformation to a point
+            function transform(point, tx) {
+                const [x, y] = point;
+                return [
+                    tx.a * x + tx.b * y + tx.e,
+                    tx.c * x + tx.d * y + tx.f
+                ];
+            }
+            
+            // Get a random transformation based on probability weights
+            function getRandomTransformation() {
+                const r = Math.random();
+                let sumProb = 0;
+                
+                for (const tx of transformations) {
+                    sumProb += tx.prob;
+                    if (r <= sumProb) {
+                        return tx;
+                    }
+                }
+                
+                return transformations[0]; // Fallback
+            }
+            
+            // Get color based on selected scheme and transformation
+            function getColorForTransformation(tx, index) {
+                const scheme = colorSchemes[colorSelect.value];
+                if (colorSelect.value === 'green') {
+                    return tx.color; // Use predefined colors for green scheme
+                }
+                return scheme[index % scheme.length];
+            }
+            
+            // Generate the Barnsley fern fractal
+            function generateBarnsleyFernFractal(iterations, animate = false) {
+                clearCanvas();
+                
+                // Set initial point
+                let currentPoint = [0, 0];
+                let step = 0;
+                
+                // Skip first 20 iterations (transient phase)
+                for (let i = 0; i < 20; i++) {
+                    const tx = getRandomTransformation();
+                    currentPoint = transform(currentPoint, tx);
+                }
+                
+                // Calculate scaling to fit the canvas
+                const w = canvas.width;
+                const h = canvas.height;
+                const scale = h / 12;  // Fern's height is about 10 units
+                const offsetX = w / 2;
+                const offsetY = h - 20;  // Position at bottom of canvas
+                
+                if (animate) {
+                    // Animate the fractal generation
+                    function animateStep() {
+                        if (step >= iterations) {
+                            isAnimating = false;
+                            return;
+                        }
+                        
+                        const batchSize = parseInt(speedInput.value);
+                        for (let i = 0; i < batchSize && step < iterations; i++, step++) {
+                            // Pick a random transformation based on probability weights
+                            const tx = getRandomTransformation();
+                            const txIndex = transformations.indexOf(tx);
+                            
+                            // Apply the transformation
+                            currentPoint = transform(currentPoint, tx);
+                            
+                            // Map the point to the canvas space
+                            const canvasX = offsetX + scale * currentPoint[0];
+                            const canvasY = offsetY - scale * currentPoint[1];  // Y is inverted in canvas
+                            
+                            // Use the color associated with the transformation
+                            ctx.fillStyle = getColorForTransformation(tx, txIndex);
+                            
+                            // Draw a small point
+                            ctx.beginPath();
+                            ctx.rect(canvasX, canvasY, 1, 1);
+                            ctx.fill();
+                        }
+                        
+                        animationId = requestAnimationFrame(animateStep);
+                    }
+                    
+                    isAnimating = true;
+                    animateStep();
+                } else {
+                    // Generate all at once
+                    for (let i = 0; i < iterations; i++) {
+                        // Pick a random transformation based on probability weights
+                        const tx = getRandomTransformation();
+                        const txIndex = transformations.indexOf(tx);
+                        
+                        // Apply the transformation
+                        currentPoint = transform(currentPoint, tx);
+                        
+                        // Map the point to the canvas space
+                        const canvasX = offsetX + scale * currentPoint[0];
+                        const canvasY = offsetY - scale * currentPoint[1];  // Y is inverted in canvas
+                        
+                        // Use the color associated with the transformation
+                        ctx.fillStyle = getColorForTransformation(tx, txIndex);
+                        
+                        // Draw a small point
+                        ctx.beginPath();
+                        ctx.rect(canvasX, canvasY, 1, 1);
+                        ctx.fill();
+                    }
+                }
+            }
+            
+            // Export the canvas as an image
+            function exportCanvasAsImage() {
+                const link = document.createElement('a');
+                link.download = 'barnsley-fern.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+            
+            // Generate button click handler
+            generateButton.addEventListener('click', function() {
+                if (isAnimating) {
+                    // Cancel any ongoing animation
+                    cancelAnimationFrame(animationId);
+                    isAnimating = false;
+                }
+                
+                const iterations = parseInt(iterationsInput.value);
+                generateBarnsleyFernFractal(iterations, false);
+            });
+            
+            // Animate button click handler
+            animateButton.addEventListener('click', function() {
+                if (isAnimating) {
+                    // Cancel any ongoing animation
+                    cancelAnimationFrame(animationId);
+                    isAnimating = false;
+                    animateButton.querySelector('span').textContent = 'Animate';
+                    return;
+                }
+                
+                const iterations = parseInt(iterationsInput.value);
+                isAnimating = true;
+                animateButton.querySelector('span').textContent = 'Stop';
+                generateBarnsleyFernFractal(iterations, true);
+            });
+            
+            // Reset button click handler
+            resetButton.addEventListener('click', function() {
+                if (isAnimating) {
+                    cancelAnimationFrame(animationId);
+                    isAnimating = false;
+                    animateButton.querySelector('span').textContent = 'Animate';
+                }
+                
+                clearCanvas();
+            });
+            
+            // Export button click handler
+            exportButton.addEventListener('click', exportCanvasAsImage);
+            
+            // Initialize
+            generateBarnsleyFernFractal(50000, false);
+        });
+</script>
+</body>
+</html> 

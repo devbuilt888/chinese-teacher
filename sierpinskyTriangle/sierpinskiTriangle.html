@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sierpinski Triangle Generator</title>
+    <style>
+        /* Modern UI Variables */
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --primary-active: #3730A3;
+            --secondary: #8B5CF6;
+            --accent: #EC4899;
+            --background: #0F172A;
+            --card-bg: #1E293B;
+            --card-hover: #182341;
+            --panel-bg: rgba(23, 37, 64, 0.7);
+            --text-primary: #F8FAFC;
+            --text-secondary: #CBD5E1;
+            --text-tertiary: #64748B;
+            --border-light: rgba(100, 116, 139, 0.2);
+            --border-medium: rgba(100, 116, 139, 0.3);
+            --surface-1: #162036;
+            --surface-2: #1E293B;
+            --success: #10B981;
+            --gradient-1: linear-gradient(110deg, #4F46E5, #8B5CF6, #EC4899);
+            --gradient-2: linear-gradient(135deg, #0EA5E9, #8B5CF6);
+            --ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
+            --ease-out: cubic-bezier(0.2, 0, 0, 1);
+            --ease-in: cubic-bezier(0.4, 0, 1, 1);
+        }
+        
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        html {
+            font-size: 16px;
+        }
+        
+        body {
+            background-color: var(--background);
+            background-image: 
+                radial-gradient(circle at 20% 35%, rgba(79, 70, 229, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 75% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 30%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+        
+        header {
+            position: relative;
+            padding: 3rem 0 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            background-image: var(--gradient-1);
+            overflow: hidden;
+        }
+        
+        header::after {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 70px;
+            bottom: -1px;
+            left: 0;
+            background-image: linear-gradient(to top, var(--background), transparent);
+            z-index: 1;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin: 0;
+            text-align: center;
+            animation: fadeUp 1s var(--ease-out) forwards;
+        }
+        
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        
+        .fractal-card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: transform 0.5s var(--ease-spring), 
+                        box-shadow 0.4s var(--ease-out), 
+                        background-color 0.3s var(--ease-out);
+            border: 1px solid var(--border-light);
+            transform-origin: center bottom;
+            position: relative;
+            animation: floatUp 5s ease-in-out infinite;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        @keyframes floatUp {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--border-light);
+            position: relative;
+        }
+        
+        .card-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+        
+        .card-header::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -1px;
+            width: 0;
+            height: 1px;
+            background: var(--gradient-2);
+            transition: width 0.3s var(--ease-out);
+        }
+        
+        .fractal-card:hover .card-header::after {
+            width: 100%;
+        }
+        
+        .canvas-container {
+            padding: 1rem;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+        
+        canvas {
+            border: 1px solid var(--border-light);
+            background-color: black;
+            max-width: 100%;
+        }
+        
+        .controls {
+            padding: 1.25rem 1.5rem;
+            border-top: 1px solid var(--border-light);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .control-group {
+            margin-bottom: 1rem;
+        }
+        
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.4rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background-color: var(--surface-1);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: all 0.2s;
+            outline: none;
+        }
+        
+        input:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25);
+            background-color: var(--surface-2);
+        }
+        
+        .button-row {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        button {
+            padding: 0.9rem 1.5rem;
+            background: var(--gradient-2);
+            position: relative;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            font-family: inherit;
+            letter-spacing: 0.01em;
+            transition: all 0.3s var(--ease-spring);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+        }
+        
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient-1);
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 0;
+        }
+        
+        button span {
+            position: relative;
+            z-index: 1;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+        }
+        
+        button:hover::before {
+            opacity: 1;
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .info-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border-light);
+        }
+        
+        .info-section h3 {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 0.5rem;
+        }
+        
+        .info-section p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        
+        .formula {
+            background-color: var(--surface-1);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 3rem;
+            color: var(--text-tertiary);
+            font-size: 0.9rem;
+        }
+        
+        .debug-info {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+            margin-top: 0.5rem;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 0 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Sierpinski Triangle Generator</h1>
+    </header>
+    
+    <div class="container">
+        <div class="main-content">
+            <div class="fractal-card">
+                <div class="card-header">
+                    <h2>Sierpinski Triangle Generator</h2>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="sierpinski-canvas" width="800" height="600"></canvas>
+                </div>
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="method-select">Generation Method</label>
+                        <select id="method-select">
+                            <option value="chaos">Chaos Game Method</option>
+                            <option value="deterministic">Deterministic Method</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="iterations-input">Iterations</label>
+                        <input type="number" id="iterations-input" min="1" max="100000" step="1000" value="10000">
+                        <input type="range" id="iterations-range" min="1000" max="50000" step="1000" value="10000">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="depth-input">Recursion Depth (for Deterministic Method)</label>
+                        <input type="number" id="depth-input" min="1" max="9" step="1" value="6">
+                        <input type="range" id="depth-range" min="1" max="9" step="1" value="6">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="color-select">Color Scheme</label>
+                        <select id="color-select">
+                            <option value="neon">Neon</option>
+                            <option value="rainbow">Rainbow</option>
+                            <option value="fire">Fire</option>
+                            <option value="cool">Cool</option>
+                            <option value="monochrome">Monochrome</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="speed-input">Animation Speed (for Chaos Game)</label>
+                        <input type="number" id="speed-input" min="1" max="1000" step="10" value="100">
+                        <input type="range" id="speed-range" min="1" max="1000" step="10" value="100">
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <div class="button-row">
+                        <button id="generate-button"><span>Generate</span></button>
+                        <button id="animate-button"><span>Animate</span></button>
+                        <button id="reset-button"><span>Reset</span></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>About the Sierpinski Triangle</h3>
+                <p>
+                    The Sierpinski Triangle is a famous fractal pattern named after Polish mathematician Wacław Sierpiński. 
+                    It is created by repeatedly subdividing an equilateral triangle into smaller equilateral triangles and 
+                    removing the central triangle.
+                </p>
+                
+                <p>
+                    This fractal has the fascinating property that it can be generated through multiple different approaches:
+                </p>
+                
+                <h3>Chaos Game Method</h3>
+                <p>
+                    Start with any point inside the triangle. Then repeatedly:
+                </p>
+                <ol>
+                    <li>Randomly select one of the three vertices of the triangle</li>
+                    <li>Move halfway from the current position toward the selected vertex</li>
+                    <li>Plot the new position</li>
+                </ol>
+                <p>
+                    Surprisingly, this random process creates the perfect Sierpinski pattern!
+                </p>
+                
+                <h3>Deterministic Method</h3>
+                <p>
+                    Begin with a solid equilateral triangle, then:
+                </p>
+                <ol>
+                    <li>Divide the triangle into four equal triangles</li>
+                    <li>Remove the center triangle</li>
+                    <li>Repeat steps 1-2 for each of the remaining triangles</li>
+                </ol>
+                
+                <h3>Mathematical Formula</h3>
+                <div class="formula">
+                    For the Chaos Game:
+                    P_{n+1} = (P_n + V_i) / 2
+                    
+                    Where:
+                    P_n is the current point
+                    V_i is a randomly chosen vertex
+                    P_{n+1} is the next point
+                </div>
+                
+                <p>
+                    The Sierpinski Triangle has a fractal dimension of log(3)/log(2) ≈ 1.585, 
+                    meaning it's somewhere between a line (dimension 1) and a plane (dimension 2).
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>© 2023 Fractal Explorer | Interactive Sierpinski Triangle Generator</p>
+        <div class="debug-info" id="debug-info"></div>
+    </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Canvas setup
+            const canvas = document.getElementById('sierpinski-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // UI elements
+            const methodSelect = document.getElementById('method-select');
+            const iterationsInput = document.getElementById('iterations-input');
+            const iterationsRange = document.getElementById('iterations-range');
+            const depthInput = document.getElementById('depth-input');
+            const depthRange = document.getElementById('depth-range');
+            const colorSelect = document.getElementById('color-select');
+            const speedInput = document.getElementById('speed-input');
+            const speedRange = document.getElementById('speed-range');
+            const generateButton = document.getElementById('generate-button');
+            const animateButton = document.getElementById('animate-button');
+            const resetButton = document.getElementById('reset-button');
+            const debugInfo = document.getElementById('debug-info');
+            
+            // Animation variables
+            let animationId = null;
+            let isAnimating = false;
+            
+            // Sync range and number inputs
+            iterationsRange.addEventListener('input', () => {
+                iterationsInput.value = iterationsRange.value;
+            });
+            
+            iterationsInput.addEventListener('input', () => {
+                iterationsRange.value = iterationsInput.value;
+            });
+            
+            depthRange.addEventListener('input', () => {
+                depthInput.value = depthRange.value;
+            });
+            
+            depthInput.addEventListener('input', () => {
+                depthRange.value = depthInput.value;
+            });
+            
+            speedRange.addEventListener('input', () => {
+                speedInput.value = speedRange.value;
+            });
+            
+            speedInput.addEventListener('input', () => {
+                speedRange.value = speedInput.value;
+            });
+            
+            // Color schemes
+            const colorSchemes = {
+                neon: ['#00ffff', '#ff00ff', '#00ff00'],
+                rainbow: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#8f00ff'],
+                fire: ['#ff0000', '#ff5a00', '#ff9a00', '#ffce00', '#ffe808'],
+                cool: ['#0077b6', '#00b4d8', '#90e0ef', '#caf0f8', '#48cae4'],
+                monochrome: ['#ffffff', '#cccccc', '#999999', '#666666', '#333333']
+            };
+            
+            // Resize canvas to maintain aspect ratio
+            function resizeCanvas() {
+                const container = canvas.parentElement;
+                const containerWidth = container.clientWidth - 40; // Accounting for padding
+                const aspectRatio = canvas.width / canvas.height;
+                
+                // Set new canvas display dimensions
+                if (containerWidth < canvas.width) {
+                    canvas.style.width = containerWidth + 'px';
+                    canvas.style.height = (containerWidth / aspectRatio) + 'px';
+                } else {
+                    canvas.style.width = '';
+                    canvas.style.height = '';
+                }
+            }
+            
+            // Initial resize and listen for window resize
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Clear the canvas
+            function clearCanvas() {
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // Get random color from selected scheme
+            function getRandomColor() {
+                const scheme = colorSchemes[colorSelect.value];
+                return scheme[Math.floor(Math.random() * scheme.length)];
+            }
+            
+            // Calculate triangle vertices
+            function calculateVertices() {
+                const padding = 50;
+                const width = canvas.width - 2 * padding;
+                const height = canvas.height - 2 * padding;
+                const centerX = canvas.width / 2;
+                
+                // Calculate equilateral triangle points
+                const topY = padding;
+                const bottomY = padding + height;
+                
+                // Using equilateral triangle properties
+                const sideLength = Math.min(width, height * 2 / Math.sqrt(3));
+                const halfWidth = sideLength / 2;
+                const height3 = sideLength * Math.sqrt(3) / 2;
+                
+                return [
+                    [centerX, topY], // Top
+                    [centerX - halfWidth, topY + height3], // Bottom left
+                    [centerX + halfWidth, topY + height3]  // Bottom right
+                ];
+            }
+            
+            // Midpoint between two points
+            function midpoint(p1, p2) {
+                return [
+                    (p1[0] + p2[0]) / 2,
+                    (p1[1] + p2[1]) / 2
+                ];
+            }
+            
+            // Draw a filled triangle
+            function drawTriangle(p1, p2, p3, fill = true) {
+                ctx.beginPath();
+                ctx.moveTo(p1[0], p1[1]);
+                ctx.lineTo(p2[0], p2[1]);
+                ctx.lineTo(p3[0], p3[1]);
+                ctx.closePath();
+                
+                if (fill) {
+                    ctx.fillStyle = getRandomColor();
+                    ctx.fill();
+                } else {
+                    ctx.strokeStyle = getRandomColor();
+                    ctx.stroke();
+                }
+            }
+            
+            // Chaos game method
+            function chaosGame(iterations, animate = false) {
+                clearCanvas();
+                
+                const vertices = calculateVertices();
+                let current = [canvas.width / 2, canvas.height / 2]; // Start at center
+                let step = 0;
+                
+                // Draw the boundary triangle
+                ctx.strokeStyle = getRandomColor();
+                ctx.beginPath();
+                ctx.moveTo(vertices[0][0], vertices[0][1]);
+                ctx.lineTo(vertices[1][0], vertices[1][1]);
+                ctx.lineTo(vertices[2][0], vertices[2][1]);
+                ctx.closePath();
+                ctx.stroke();
+                
+                if (animate) {
+                    // Animate the chaos game
+                    function animateStep() {
+                        if (step >= iterations) {
+                            isAnimating = false;
+                            return;
+                        }
+                        
+                        const batchSize = parseInt(speedInput.value);
+                        for (let i = 0; i < batchSize && step < iterations; i++, step++) {
+                            // Randomly choose a vertex
+                            const vertex = vertices[Math.floor(Math.random() * vertices.length)];
+                            
+                            // Move halfway towards the vertex
+                            current = midpoint(current, vertex);
+                            
+                            // Plot the point
+                            ctx.fillStyle = getRandomColor();
+                            ctx.fillRect(current[0], current[1], 1, 1);
+                        }
+                        
+                        debugInfo.textContent = `Generated ${step.toLocaleString()} of ${iterations.toLocaleString()} points`;
+                        animationId = requestAnimationFrame(animateStep);
+                    }
+                    
+                    isAnimating = true;
+                    animateStep();
+                } else {
+                    // Non-animated, do all iterations at once
+                    for (let i = 0; i < iterations; i++) {
+                        // Randomly choose a vertex
+                        const vertex = vertices[Math.floor(Math.random() * vertices.length)];
+                        
+                        // Move halfway towards the vertex
+                        current = midpoint(current, vertex);
+                        
+                        // Plot the point
+                        ctx.fillStyle = getRandomColor();
+                        ctx.fillRect(current[0], current[1], 1, 1);
+                        
+                        // Update only occasionally for performance
+                        if (i % 5000 === 0) {
+                            debugInfo.textContent = `Generated ${i.toLocaleString()} of ${iterations.toLocaleString()} points`;
+                        }
+                    }
+                    
+                    debugInfo.textContent = `Completed ${iterations.toLocaleString()} iterations`;
+                }
+            }
+            
+            // Deterministic method using recursion
+            function deterministicMethod(depth) {
+                clearCanvas();
+                
+                const vertices = calculateVertices();
+                
+                // Recursively draw the Sierpinski triangle
+                function sierpinski(p1, p2, p3, depth) {
+                    if (depth === 0) {
+                        drawTriangle(p1, p2, p3);
+                        return;
+                    }
+                    
+                    const p12 = midpoint(p1, p2);
+                    const p23 = midpoint(p2, p3);
+                    const p31 = midpoint(p3, p1);
+                    
+                    // Recursively draw three smaller triangles
+                    sierpinski(p1, p12, p31, depth - 1);
+                    sierpinski(p12, p2, p23, depth - 1);
+                    sierpinski(p31, p23, p3, depth - 1);
+                }
+                
+                sierpinski(vertices[0], vertices[1], vertices[2], depth);
+                debugInfo.textContent = `Completed recursive Sierpinski triangle with depth ${depth}`;
+            }
+            
+            // Generate button click handler
+            generateButton.addEventListener('click', function() {
+                if (isAnimating) {
+                    // Cancel any ongoing animation
+                    cancelAnimationFrame(animationId);
+                    isAnimating = false;
+                }
+                
+                const method = methodSelect.value;
+                
+                if (method === 'chaos') {
+                    const iterations = parseInt(iterationsInput.value);
+                    chaosGame(iterations, false);
+                } else {
+                    const depth = parseInt(depthInput.value);
+                    deterministicMethod(depth);
+                }
+            });
+            
+            // Animate button click handler
+            animateButton.addEventListener('click', function() {
+                if (isAnimating) {
+                    // Cancel any ongoing animation
+                    cancelAnimationFrame(animationId);
+                    isAnimating = false;
+                    animateButton.querySelector('span').textContent = 'Animate';
+                    return;
+                }
+                
+                const method = methodSelect.value;
+                
+                if (method === 'chaos') {
+                    const iterations = parseInt(iterationsInput.value);
+                    chaosGame(iterations, true);
+                    animateButton.querySelector('span').textContent = 'Stop';
+                } else {
+                    // For deterministic method, just run it normally as it's not animated
+                    const depth = parseInt(depthInput.value);
+                    deterministicMethod(depth);
+                }
+            });
+            
+            // Reset button click handler
+            resetButton.addEventListener('click', function() {
+                if (isAnimating) {
+                    cancelAnimationFrame(animationId);
+                    isAnimating = false;
+                    animateButton.querySelector('span').textContent = 'Animate';
+                }
+                
+                clearCanvas();
+                debugInfo.textContent = '';
+            });
+            
+            // Method change handler to enable/disable specific inputs
+            methodSelect.addEventListener('change', function() {
+                const method = methodSelect.value;
+                
+                if (method === 'chaos') {
+                    iterationsInput.disabled = false;
+                    iterationsRange.disabled = false;
+                    speedInput.disabled = false;
+                    speedRange.disabled = false;
+                    depthInput.disabled = true;
+                    depthRange.disabled = true;
+                } else {
+                    iterationsInput.disabled = true;
+                    iterationsRange.disabled = true;
+                    speedInput.disabled = true;
+                    speedRange.disabled = true; 
+                    depthInput.disabled = false;
+                    depthRange.disabled = false;
+                }
+            });
+            
+            // Initial setup - disable depth controls by default
+            depthInput.disabled = true;
+            depthRange.disabled = true;
+            
+            // Generate initial fractal
+            chaosGame(10000, false);
+        });
+    </script>
+</body>
+</html> 

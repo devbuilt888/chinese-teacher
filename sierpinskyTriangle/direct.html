@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fractal Explorer - Direct View</title>
+    <style>
+        body {
+            background-color: #0F172A;
+            color: #F8FAFC;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #8B5CF6;
+        }
+        
+        h2 {
+            color: #4F46E5;
+            margin-top: 40px;
+            margin-bottom: 20px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background-color: #1E293B;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card-header {
+            background-color: #0F172A;
+            padding: 10px 15px;
+            border-bottom: 1px solid #2D3748;
+        }
+        
+        .card-header h3 {
+            margin: 0;
+            color: #A78BFA;
+        }
+        
+        canvas {
+            width: 100%;
+            height: 200px;
+            background-color: #0F172A;
+        }
+        
+        .controls {
+            padding: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #CBD5E1;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Fractal Explorer</h1>
+    
+    <h2>Chaos Game Fractals</h2>
+    <div class="grid" id="chaos-game-grid">
+        <!-- Chaos game fractals will be added here dynamically -->
+    </div>
+    
+    <h2>Complex Mathematical Fractals</h2>
+    <div class="grid" id="complex-math-grid">
+        <!-- Complex mathematical fractals will be added here dynamically -->
+    </div>
+    
+    <script>
+        // Wait for DOM to load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get grid containers
+            const chaosGrid = document.getElementById('chaos-game-grid');
+            const mathGrid = document.getElementById('complex-math-grid');
+            
+            // Create fractal cards
+            createChaosGameFractals(chaosGrid);
+            createMathFractals(mathGrid);
+        });
+        
+        // Function to create a fractal card
+        function createFractalCard(title, canvasId, controlsHTML, parentElement) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            
+            const header = document.createElement('div');
+            header.className = 'card-header';
+            
+            const heading = document.createElement('h3');
+            heading.textContent = title;
+            header.appendChild(heading);
+            
+            const canvas = document.createElement('canvas');
+            canvas.id = canvasId;
+            canvas.width = 300;
+            canvas.height = 200;
+            
+            const controls = document.createElement('div');
+            controls.className = 'controls';
+            controls.innerHTML = controlsHTML;
+            
+            card.appendChild(header);
+            card.appendChild(canvas);
+            card.appendChild(controls);
+            
+            parentElement.appendChild(card);
+        }
+        
+        // Create chaos game fractals
+        function createChaosGameFractals(parentElement) {
+            // Sierpinski Triangle
+            createFractalCard(
+                'Sierpinski Triangle',
+                'triangle-canvas',
+                `<label>Iterations: <span id="triangle-iterations-value">10000</span></label>
+                 <input type="range" min="1000" max="50000" value="10000" step="1000" id="triangle-iterations">`,
+                parentElement
+            );
+            
+            // Sierpinski Carpet
+            createFractalCard(
+                'Sierpinski Carpet',
+                'sierpinski-carpet-canvas',
+                `<label>Iterations: <span id="carpet-iterations-value">10000</span></label>
+                 <input type="range" min="1000" max="50000" value="10000" step="1000" id="carpet-iterations">`,
+                parentElement
+            );
+            
+            // Pentagon Fractal
+            createFractalCard(
+                'Pentagon Fractal',
+                'pentagon-canvas',
+                `<label>Iterations: <span id="pentagon-iterations-value">10000</span></label>
+                 <input type="range" min="1000" max="50000" value="10000" step="1000" id="pentagon-iterations">
+                 <label>Contraction Ratio: <span id="pentagon-ratio-value">0.618</span></label>
+                 <input type="range" min="0.4" max="0.8" value="0.618" step="0.01" id="pentagon-ratio">`,
+                parentElement
+            );
+            
+            // Barnsley Fern
+            createFractalCard(
+                'Barnsley Fern',
+                'fern-canvas',
+                `<label>Iterations: <span id="fern-iterations-value">10000</span></label>
+                 <input type="range" min="1000" max="50000" value="10000" step="1000" id="fern-iterations">`,
+                parentElement
+            );
+        }
+        
+        // Create complex math fractals
+        function createMathFractals(parentElement) {
+            // Mandelbrot Set
+            createFractalCard(
+                'Mandelbrot Set',
+                'mandelbrot-canvas',
+                `<label>Max Iterations: <span id="mandelbrot-iterations-value">100</span></label>
+                 <input type="range" min="10" max="1000" value="100" step="10" id="mandelbrot-iterations">
+                 <label>Zoom: <span id="mandelbrot-zoom-value">1</span></label>
+                 <input type="range" min="0.5" max="10" value="1" step="0.1" id="mandelbrot-zoom">`,
+                parentElement
+            );
+            
+            // Julia Set
+            createFractalCard(
+                'Julia Set',
+                'julia-canvas',
+                `<label>Max Iterations: <span id="julia-iterations-value">100</span></label>
+                 <input type="range" min="10" max="1000" value="100" step="10" id="julia-iterations">
+                 <label>Real Parameter: <span id="julia-real-value">-0.7</span></label>
+                 <input type="range" min="-2" max="2" value="-0.7" step="0.01" id="julia-real">
+                 <label>Imaginary Parameter: <span id="julia-imag-value">0.27</span></label>
+                 <input type="range" min="-2" max="2" value="0.27" step="0.01" id="julia-imag">`,
+                parentElement
+            );
+        }
+    </script>
+    
+    <!-- Add the compiled TypeScript file -->
+    <script src="dist/main.js"></script>
+    
+    <!-- Add our direct initialization script -->
+    <script src="direct.js"></script>
+</body>
+</html> 

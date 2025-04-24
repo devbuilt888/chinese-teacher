@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pentagon Fractal Editor</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/fractal-pages.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/header-fix.css">
+</head>
+<body>
+    <header>
+        <h1>Pentagon Fractal Editor</h1>
+    </header>
+    
+    <div class="container">
+        <div class="main-content">
+            <div class="editor-card">
+                <div class="card-header">
+                    <h2>Pentagon Fractal Editor</h2>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="pentagon-canvas" width="800" height="600"></canvas>
+                </div>
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="iterations-input">Iterations</label>
+                        <input type="number" id="iterations-input" min="1000" max="100000" step="1000" value="40000">
+                        <input type="range" id="iterations-range" min="1000" max="100000" step="1000" value="40000">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="ratio-input">Contraction Ratio</label>
+                        <input type="number" id="ratio-input" min="0.3" max="0.9" step="0.01" value="0.618">
+                        <input type="range" id="ratio-range" min="0.3" max="0.9" step="0.01" value="0.618">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="color-select">Color Scheme</label>
+                        <select id="color-select">
+                            <option value="purple">Purple</option>
+                            <option value="neon">Neon</option>
+                            <option value="rainbow">Rainbow</option>
+                            <option value="fire">Fire</option>
+                            <option value="cool">Cool</option>
+                            <option value="monochrome">Monochrome</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="speed-input">Animation Speed</label>
+                        <input type="number" id="speed-input" min="1" max="5000" step="100" value="1000">
+                        <input type="range" id="speed-range" min="1" max="5000" step="100" value="1000">
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <div class="button-row">
+                        <button id="generate-button"><span>Generate</span></button>
+                        <button id="animate-button"><span>Animate</span></button>
+                        <button id="reset-button"><span>Reset</span></button>
+                        <button id="export-button"><span>Export Image</span></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>About the Pentagon Fractal</h3>
+                <p>
+                    The Pentagon Fractal is a captivating chaos game variant played on the five vertices 
+                    of a regular pentagon. This fractal demonstrates how simple rules can create complex 
+                    geometric patterns with pentagonal symmetry.
+                </p>
+                
+                <p>
+                    Each iteration involves randomly selecting one of the five vertices of the pentagon 
+                    and moving a fraction of the distance from the current point toward that vertex. 
+                    The resulting pattern reveals intricate self-similarity and beautiful five-fold symmetry.
+                </p>
+                
+                <h3>How It Works</h3>
+                <p>
+                    The pentagon fractal uses what's known as a chaos game algorithm:
+                </p>
+                <ol>
+                    <li>Start with a regular pentagon and place a point at random inside it</li>
+                    <li>Randomly select one of the five vertices of the pentagon</li>
+                    <li>Move the point a certain distance (around 0.618 - the golden ratio) toward the selected vertex</li>
+                    <li>Plot the new position and repeat the process</li>
+                </ol>
+                
+                <h3>Mathematical Formula</h3>
+                <div class="formula">
+                    P_{n+1} = P_n + r(V_i - P_n)
+                    
+                    Where:
+                    - P_n is the current point
+                    - V_i is a randomly chosen vertex from the 5 vertices of the pentagon
+                    - r is the contraction ratio (typically 0.618, the golden ratio)
+                </div>
+                
+                <p>
+                    Using the golden ratio (0.618) as the contraction factor creates particularly 
+                    interesting patterns that reflect the pentagonal geometry with beautiful 
+                    five-fold symmetry, making this fractal a visual representation of both chaos 
+                    and mathematical harmony.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <button class="return-button" title="Return to Dashboard" onclick="window.location.href='/'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5"></path>
+            <path d="M12 19l-7-7 7-7"></path>
+        </svg>
+    </button>
+    
+    <!-- Debug panel -->
+    <div id="debug-info" class="debug-info"></div>
+
+    <script src="/main.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Canvas setup
+            const canvas = document.getElementById('pentagon-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // UI elements
+            const iterationsInput = document.getElementById('iterations-input');
+            const iterationsRange = document.getElementById('iterations-range');
+            const ratioInput = document.getElementById('ratio-input');
+            const ratioRange = document.getElementById('ratio-range');
+            const colorSelect = document.getElementById('color-select');
+            const speedInput = document.getElementById('speed-input');
+            const speedRange = document.getElementById('speed-range');
+            const generateButton = document.getElementById('generate-button');
+            const animateButton = document.getElementById('animate-button');
+            const resetButton = document.getElementById('reset-button');
+            const exportButton = document.getElementById('export-button');
+            
+            // Animation variables
+            let animationId = null;
+            let isAnimating = false;
+            
+            // Sync range and number inputs
+            iterationsRange.addEventListener('input', () => {
+                iterationsInput.value = iterationsRange.value;
+            });
+            
+            iterationsInput.addEventListener('input', () => {
+                iterationsRange.value = iterationsInput.value;
+            });
+            
+            ratioRange.addEventListener('input', () => {
+                ratioInput.value = ratioRange.value;
+            });
+            
+            ratioInput.addEventListener('input', () => {
+                ratioRange.value = ratioInput.value;
+            });
+            
+            speedRange.addEventListener('input', () => {
+                speedInput.value = speedRange.value;
+            });
+            
+            speedInput.addEventListener('input', () => {
+                speedRange.value = speedInput.value;
+            });
+            
+            // Color schemes
+            const colorSchemes = {
+                purple: ['#3F51B5', '#5E35B1', '#7B1FA2', '#8E24AA', '#9C27B0'],
+                neon: ['#00ffff', '#ff00ff', '#00ff00', '#ffff00', '#ff00ff'],
+                rainbow: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff'],
+                fire: ['#ff0000', '#ff5a00', '#ff9a00', '#ffce00', '#ffe808'],
+                cool: ['#0077b6', '#00b4d8', '#90e0ef', '#caf0f8', '#48cae4'],
+                monochrome: ['#ffffff', '#dddddd', '#bbbbbb', '#999999', '#666666']
+            };
+            
+            // Resize canvas to maintain aspect ratio
+            function resizeCanvas() {
+                const container = canvas.parentElement;
+                const containerWidth = container.clientWidth - 40; // Accounting for padding
+                const aspectRatio = canvas.width / canvas.height;
+                
+                // Set new canvas display dimensions
+                if (containerWidth < canvas.width) {
+                    canvas.style.width = containerWidth + 'px';
+                    canvas.style.height = (containerWidth / aspectRatio) + 'px';
+                } else {
+                    canvas.style.width = '';
+                    canvas.style.height = '';
+                }
+            }
+            
+            // Initial resize and listen for window resize
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Clear the canvas
+            function clearCanvas() {
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // Get random color from selected scheme
+            function getRandomColor() {
+                const scheme = colorSchemes[colorSelect.value];
+                return scheme[Math.floor(Math.random() * scheme.length)];
+            }
+            
+            // Calculate pentagon vertices
+            function calculateVertices() {
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const radius = Math.min(canvas.width, canvas.height) * 0.4;
+                
+                const vertices = [];
+                for (let i = 0; i < 5; i++) {
+                    // Calculate angle for each vertex - starting from the top
+                    const angle = (Math.PI / 2) + (2 * Math.PI * i / 5);
+                    vertices.push([
+                        centerX + radius * Math.cos(angle),
+                        centerY - radius * Math.sin(angle)
+                    ]);
+                }
+                
+                return vertices;
+            }
+            
+            // Move point towards vertex by contraction ratio
+            function moveTowards(point, vertex, ratio) {
+                return [
+                    point[0] + ratio * (vertex[0] - point[0]),
+                    point[1] + ratio * (vertex[1] - point[1])
+                ];
+            }
+            
+            // Pentagon chaos game implementation
+            function generatePentagonFractal(iterations, animate = false) {
+                clearCanvas();
+                
+                const vertices = calculateVertices();
+                let currentPoint = [canvas.width / 2, canvas.height / 2]; // Start at center
+                let step = 0;
+                const contractionRatio = parseFloat(ratioInput.value);
+                
+                // Draw the pentagon boundary
+                ctx.strokeStyle = getRandomColor();
+                ctx.beginPath();
+                ctx.moveTo(vertices[0][0], vertices[0][1]);
+                for (let i = 1; i <= 5; i++) {
+                    const index = i % 5;
+                    ctx.lineTo(vertices[index][0], vertices[index][1]);
+                }
+                ctx.closePath();
+                ctx.stroke();
+                
+                // Draw the vertices
+                vertices.forEach(vertex => {
+                    ctx.fillStyle = getRandomColor();
+                    ctx.beginPath();
+                    ctx.arc(vertex[0], vertex[1], 3, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                
+                // Skip first 20 iterations (transient phase)
+                for (let i = 0; i < 20; i++) {
+                    const randomIndex = Math.floor(Math.random() * 5);
+                    const targetVertex = vertices[randomIndex];
+                    currentPoint = moveTowards(currentPoint, targetVertex, contractionRatio);
+                }
+                
+                if (animate) {
+                    // Animate the chaos game
+                    function animateStep() {
+                        if (step >= iterations) {
+                            isAnimating = false;
+                            return;
+                        }
+                        
+                        const batchSize = parseInt(speedInput.value);
+                        for (let i = 0; i < batchSize && step < iterations; i++, step++) {
+                            // Choose a random vertex
+                            const randomIndex = Math.floor(Math.random() * 5);
+                            const targetVertex = vertices[randomIndex];
+                            
+                            // Move towards the vertex by contraction ratio
+                            currentPoint = moveTowards(currentPoint, targetVertex, contractionRatio);
+                            
+                            // Plot the point with a color based on the vertex
+                            ctx.fillStyle = colorSchemes[colorSelect.value][randomIndex % colorSchemes[colorSelect.value].length];
+                            ctx.fillRect(currentPoint[0], currentPoint[1], 1, 1);
+                        }
+                        
+                        animationId = requestAnimationFrame(animateStep);
+                    }
+                    
+                    isAnimating = true;
+                    animateStep();
+                } else {
+                    // Generate all at once
+                    for (let i = 0; i < iterations; i++) {
+                        // Choose a random vertex
+                        const randomIndex = Math.floor(Math.random() * 5);
+                        const targetVertex = vertices[randomIndex];
+                        
+                        // Move towards the vertex by contraction ratio
+                        currentPoint = moveTowards(currentPoint, targetVertex, contractionRatio);
+                        
+                        // Plot the point with a color based on the vertex
+                        ctx.fillStyle = colorSchemes[colorSelect.value][randomIndex % colorSchemes[colorSelect.value].length];
+                        ctx.fillRect(currentPoint[0], currentPoint[1], 1, 1);
+                    }
+                }
+            }
+            
+            // Export the canvas as an image
+            function exportCanvasAsImage() {
+                const link = document.createElement('a');
+                link.download = 'pentagon-fractal.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+            
+            // Generate button click handler
+            generateButton.addEventListener('click', function() {
+                if (isAnimating) {
+                    // Cancel any ongoing animation
+                    cancelAnimationFrame(animationId);
+                    isAnimating = false;
+                }
+                
+                const iterations = parseInt(iterationsInput.value);
+                generatePentagonFractal(iterations, false);
+            });
+            
+            // Animate button click handler
+            animateButton.addEventListener('click', function() {
+                if (isAnimating) {
+                    // Cancel any ongoing animation
+                    cancelAnimationFrame(animationId);
+                    isAnimating = false;
+                    animateButton.querySelector('span').textContent = 'Animate';
+                    return;
+                }
+                
+                const iterations = parseInt(iterationsInput.value);
+                isAnimating = true;
+                animateButton.querySelector('span').textContent = 'Stop';
+                generatePentagonFractal(iterations, true);
+            });
+            
+            // Reset button click handler
+            resetButton.addEventListener('click', function() {
+                if (isAnimating) {
+                    cancelAnimationFrame(animationId);
+                    isAnimating = false;
+                    animateButton.querySelector('span').textContent = 'Animate';
+                }
+                
+                clearCanvas();
+            });
+            
+            // Export button click handler
+            exportButton.addEventListener('click', exportCanvasAsImage);
+            
+            // Initialize
+            generatePentagonFractal(40000, false);
+        });
+    </script>
+</body>
+</html> 

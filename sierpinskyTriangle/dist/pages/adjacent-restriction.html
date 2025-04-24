@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adjacent Restriction Fractal - Editor</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/fractal-pages.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/header-fix.css">
+</head>
+<body>
+    <header>
+            <h1>Adjacent Restriction Fractal</h1>
+    </header>
+    
+    <div class="container">
+        <div class="main-content">
+            <div class="editor-card">
+                <div class="card-header">
+                    <h2>Adjacent Restriction Fractal</h2>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="adjacent-canvas" width="800" height="600"></canvas>
+                </div>
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="iterations-input">Iterations</label>
+                        <input type="number" id="iterations-input" min="1000" max="100000" step="1000" value="20000">
+                        <input type="range" id="iterations-range" min="1000" max="50000" step="1000" value="20000">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="ratio-input">Contraction Ratio</label>
+                        <input type="number" id="ratio-input" min="0.1" max="0.9" step="0.05" value="0.5">
+                        <input type="range" id="ratio-range" min="0.1" max="0.9" step="0.05" value="0.5">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="color-select">Color Scheme</label>
+                        <select id="color-select">
+                            <option value="default">Default</option>
+                            <option value="rainbow">Rainbow</option>
+                            <option value="fire">Fire</option>
+                            <option value="cool">Cool</option>
+                            <option value="pastel">Pastel</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="speed-input">Animation Speed</label>
+                        <input type="number" id="speed-input" min="10" max="1000" step="10" value="100">
+                        <input type="range" id="speed-range" min="10" max="1000" step="10" value="100">
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <div class="button-row">
+                        <button id="generate-button"><span>Generate</span></button>
+                        <button id="animate-button"><span>Animate</span></button>
+                        <button id="reset-button"><span>Reset</span></button>
+                        <button id="export-button"><span>Export Image</span></button>
+                    </div>
+                </div>
+        </div>
+        
+            <div class="info-section">
+                <h3>About the Adjacent Restriction Fractal</h3>
+            <p>
+                The Adjacent Restriction Fractal is a stunning variation of the chaos game played on a hexagon. 
+                This fractal introduces a fascinating rule: when choosing the next vertex to move towards, you cannot 
+                select a vertex that is adjacent to the previously chosen one.
+            </p>
+            <p>
+                This constraint creates striking geometric patterns with distinct regions and symmetries. 
+                The fractal is generated on a regular hexagon with six vertices, and each point is plotted 
+                by moving a specified distance towards the chosen vertex, following chaos game principles.
+            </p>
+                
+                <h3>Generation Method</h3>
+            <p>
+                The fractal is generated on a regular hexagon with six vertices. For each iteration:
+            </p>
+            <ol>
+                <li>Randomly select a vertex that is not adjacent to the previously chosen vertex</li>
+                <li>Move a portion of the way from the current point toward the selected vertex (contraction ratio)</li>
+                <li>Plot the new point with a color based on the chosen vertex</li>
+                <li>Repeat for the desired number of iterations</li>
+            </ol>
+                
+                <h3>Mathematical Formula</h3>
+                <div class="formula">
+                    P_{n+1} = P_n + r * (V_i - P_n)
+                
+                Where:
+                - V_i cannot be adjacent to the previously chosen vertex
+                - r is the contraction ratio (0.1 to 0.9)
+                - Vertices are arranged in a regular hexagon
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <button class="return-button" title="Return to Dashboard" onclick="window.location.href='/'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5"></path>
+            <path d="M12 19l-7-7 7-7"></path>
+        </svg>
+    </button>
+    
+    <!-- Debug panel -->
+    <div id="debug-info" class="debug-info"></div>
+    
+    <!-- Include the main JavaScript file for the fractal implementations -->
+    <script src="../../main.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Canvas setup
+            const canvas = document.getElementById('adjacent-canvas');
+            if (!canvas) {
+                console.error('Canvas element not found');
+                return;
+            }
+            
+            // UI elements
+            const iterationsInput = document.getElementById('iterations-input');
+            const iterationsRange = document.getElementById('iterations-range');
+            const ratioInput = document.getElementById('ratio-input');
+            const ratioRange = document.getElementById('ratio-range');
+            const colorSelect = document.getElementById('color-select');
+            const speedInput = document.getElementById('speed-input');
+            const speedRange = document.getElementById('speed-range');
+            const generateButton = document.getElementById('generate-button');
+            const animateButton = document.getElementById('animate-button');
+            const resetButton = document.getElementById('reset-button');
+            const exportButton = document.getElementById('export-button');
+            
+            // Animation variables
+            let animationId = null;
+            let isAnimating = false;
+            
+            // Fractal instance
+            let fractal = null;
+            
+            // Color schemes
+            const colorSchemes = {
+                default: ["#0088ff", "#00ff88", "#ff0088", "#ffff00", "#ff8800", "#8800ff"],
+                rainbow: ["#FF0000", "#FF7F00", "#FFFF00", "#00FF00", "#0000FF", "#4B0082"],
+                fire: ["#FF0000", "#FF5A00", "#FF9A00", "#FFCE00", "#FFE808", "#FFFF66"],
+                cool: ["#0077B6", "#00B4D8", "#90E0EF", "#CAF0F8", "#48CAE4", "#03045E"],
+                pastel: ["#FFD1DC", "#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE1FF"]
+            };
+            
+            // Sync range and number inputs
+            iterationsRange.addEventListener('input', () => {
+                iterationsInput.value = iterationsRange.value;
+            });
+            
+            iterationsInput.addEventListener('input', () => {
+                iterationsRange.value = iterationsInput.value;
+            });
+            
+            ratioRange.addEventListener('input', () => {
+                ratioInput.value = ratioRange.value;
+            });
+            
+            ratioInput.addEventListener('input', () => {
+                ratioRange.value = ratioInput.value;
+            });
+            
+            speedRange.addEventListener('input', () => {
+                speedInput.value = speedRange.value;
+            });
+            
+            speedInput.addEventListener('input', () => {
+                speedRange.value = speedInput.value;
+            });
+            
+            // Resize canvas to maintain aspect ratio
+            function resizeCanvas() {
+                const container = canvas.parentElement;
+                const containerWidth = container.clientWidth - 40; // Accounting for padding
+                const aspectRatio = canvas.width / canvas.height;
+                
+                // Set new canvas display dimensions
+                if (containerWidth < canvas.width) {
+                    canvas.style.width = containerWidth + 'px';
+                    canvas.style.height = (containerWidth / aspectRatio) + 'px';
+                } else {
+                    canvas.style.width = '';
+                    canvas.style.height = '';
+                }
+            }
+            
+            // Initial resize and listen for window resize
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Generate the fractal with the AdjacentRestrictionFractal class
+            function generateFractal(animate = false) {
+                if (isAnimating) {
+                    if (fractal) {
+                        fractal.stopAnimation();
+                    }
+                    isAnimating = false;
+                    animateButton.querySelector('span').textContent = 'Animate';
+                }
+                
+                const iterations = parseInt(iterationsInput.value);
+                
+                if (typeof window.AdjacentRestrictionFractal === 'function') {
+                    fractal = new window.AdjacentRestrictionFractal('adjacent-canvas', iterations);
+                    
+                    // Apply contraction ratio
+                    fractal.setContractionRatio(parseFloat(ratioInput.value));
+                    
+                    // Apply color scheme
+                    const selectedColorScheme = colorSchemes[colorSelect.value];
+                    if (selectedColorScheme) {
+                        fractal.setColorScheme(selectedColorScheme);
+                    }
+                    
+                    fractal.initialize();
+                    
+                    if (animate) {
+                        isAnimating = true;
+                        animateButton.querySelector('span').textContent = 'Stop';
+                        fractal.generate(true, parseInt(speedInput.value));
+                    } else {
+                        fractal.generate(false);
+                    }
+                } else {
+                    console.error('AdjacentRestrictionFractal class not found');
+                }
+            }
+            
+            // Export the canvas as an image
+            function exportCanvasAsImage() {
+                const link = document.createElement('a');
+                link.download = 'adjacent-restriction-fractal.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+            
+            // Generate button click handler
+            generateButton.addEventListener('click', function() {
+                generateFractal(false);
+            });
+            
+            // Animate button click handler
+            animateButton.addEventListener('click', function() {
+                if (isAnimating) {
+                    if (fractal) {
+                        fractal.stopAnimation();
+                    }
+                    isAnimating = false;
+                    animateButton.querySelector('span').textContent = 'Animate';
+                } else {
+                    generateFractal(true);
+                }
+            });
+            
+            // Reset button click handler
+            resetButton.addEventListener('click', function() {
+                if (fractal) {
+                    fractal.clear();
+                    fractal.initialize();
+                }
+            });
+            
+            // Color scheme change handler
+            colorSelect.addEventListener('change', function() {
+                if (fractal) {
+                    const selectedColorScheme = colorSchemes[colorSelect.value];
+                    if (selectedColorScheme) {
+                        fractal.setColorScheme(selectedColorScheme);
+                        generateFractal(false);
+                    }
+                }
+            });
+            
+            // Ratio change handler
+            ratioInput.addEventListener('change', function() {
+                if (fractal) {
+                    fractal.setContractionRatio(parseFloat(ratioInput.value));
+                    generateFractal(false);
+                }
+            });
+            
+            // Export button click handler
+            exportButton.addEventListener('click', exportCanvasAsImage);
+            
+            // Initialize with default values
+            generateFractal(false);
+        });
+    </script>
+</body>
+</html> 

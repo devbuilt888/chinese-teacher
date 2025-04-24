@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sierpinski Carpet Fractal Editor</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/fractal-pages.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/header-fix.css">
+</head>
+<body>
+    <header>
+        <h1>Sierpinski Carpet Fractal Editor</h1>
+    </header>
+    
+    <div class="container">
+        <div class="main-content">
+            <div class="editor-card">
+                <div class="card-header">
+                    <h2>Sierpinski Carpet Fractal Editor</h2>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="sierpinski-carpet-canvas" width="800" height="600"></canvas>
+                </div>
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="iterations-input">Iterations</label>
+                        <input type="number" id="iterations-input" min="1000" max="200000" step="1000" value="50000">
+                        <input type="range" id="iterations-range" min="1000" max="200000" step="1000" value="50000">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="color-select">Color Scheme</label>
+                        <select id="color-select">
+                            <option value="navy">Navy</option>
+                            <option value="neon">Neon</option>
+                            <option value="rainbow">Rainbow</option>
+                            <option value="fire">Fire</option>
+                            <option value="cool">Cool</option>
+                            <option value="monochrome">Monochrome</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="speed-input">Animation Speed</label>
+                        <input type="number" id="speed-input" min="1" max="5000" step="100" value="1000">
+                        <input type="range" id="speed-range" min="1" max="5000" step="100" value="1000">
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <div class="button-row">
+                        <button id="generate-button"><span>Generate</span></button>
+                        <button id="animate-button"><span>Animate</span></button>
+                        <button id="reset-button"><span>Reset</span></button>
+                        <button id="export-button"><span>Export Image</span></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>About the Sierpinski Carpet</h3>
+                <p>
+                    The Sierpinski Carpet is a fascinating generalization of the Sierpinski Triangle to two dimensions.
+                    This fractal is created using a chaos game played on the 8 vertices of a square (excluding the center).
+                </p>
+                
+                <p>
+                    The chaos game for the Sierpinski Carpet uses 8 points arranged in a square pattern. In each iteration,
+                    a random vertex is selected, and we move 2/3 of the way from the current position to the chosen vertex.
+                    The result is a self-similar pattern with a square hole in the middle and intricate detail at all scales.
+                </p>
+                
+                <h3>How It Works</h3>
+                <p>
+                    The Sierpinski Carpet fractal is generated through these steps:
+                </p>
+                <ol>
+                    <li><strong>Setup</strong>: Define 8 vertices arranged in a square pattern, excluding the center</li>
+                    <li><strong>Starting Point</strong>: Begin with a random point within the square</li>
+                    <li><strong>Iterative Process</strong>: For each iteration, randomly select one of the 8 vertices</li>
+                    <li><strong>Movement</strong>: Move 2/3 of the distance from the current point toward the selected vertex</li>
+                    <li><strong>Plot Point</strong>: Draw the new point and repeat the process</li>
+                </ol>
+                
+                <h3>Mathematical Formula</h3>
+                <div class="formula">
+                    P_{n+1} = P_n + 2/3(V_i - P_n)
+                    
+                    Where:
+                    - P_n is the current point
+                    - V_i is a randomly chosen vertex from the 8 vertices
+                    - The 2/3 contraction ratio is crucial for the formation of the carpet pattern
+                </div>
+                
+                <p>
+                    This chaos game approach creates the Sierpinski Carpet fractal, which has a fractal dimension of 
+                    approximately 1.893. The fractal is self-similar, meaning that zooming into any part reveals 
+                    patterns similar to the whole structure.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <button class="return-button" title="Return to Dashboard" onclick="window.location.href='/'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5"></path>
+            <path d="M12 19l-7-7 7-7"></path>
+        </svg>
+    </button>
+    
+    <!-- Debug panel -->
+    <div id="debug-info" class="debug-info"></div>
+
+    <script src="/main.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Canvas setup
+            const canvas = document.getElementById('sierpinski-carpet-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // UI elements
+            const iterationsInput = document.getElementById('iterations-input');
+            const iterationsRange = document.getElementById('iterations-range');
+            const colorSelect = document.getElementById('color-select');
+            const speedInput = document.getElementById('speed-input');
+            const speedRange = document.getElementById('speed-range');
+            const generateButton = document.getElementById('generate-button');
+            const animateButton = document.getElementById('animate-button');
+            const resetButton = document.getElementById('reset-button');
+            const exportButton = document.getElementById('export-button');
+            
+            // Animation variables
+            let animationId = null;
+            let isAnimating = false;
+            
+            // Sync range and number inputs
+            iterationsRange.addEventListener('input', () => {
+                iterationsInput.value = iterationsRange.value;
+            });
+            
+            iterationsInput.addEventListener('input', () => {
+                iterationsRange.value = iterationsInput.value;
+            });
+            
+            speedRange.addEventListener('input', () => {
+                speedInput.value = speedRange.value;
+            });
+            
+            speedInput.addEventListener('input', () => {
+                speedRange.value = speedInput.value;
+            });
+            
+            // Color schemes
+            const colorSchemes = {
+                navy: ['#003366', '#005b96', '#6497b1', '#b3cde0', '#051923'],
+                neon: ['#00ffff', '#ff00ff', '#00ff00', '#ffff00', '#ff00ff'],
+                rainbow: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff'],
+                fire: ['#ff0000', '#ff5a00', '#ff9a00', '#ffce00', '#ffe808'],
+                cool: ['#0077b6', '#00b4d8', '#90e0ef', '#caf0f8', '#48cae4'],
+                monochrome: ['#ffffff', '#dddddd', '#bbbbbb', '#999999', '#666666']
+            };
+            
+            // Resize canvas to maintain aspect ratio
+            function resizeCanvas() {
+                const container = canvas.parentElement;
+                const containerWidth = container.clientWidth - 40; // Accounting for padding
+                const aspectRatio = canvas.width / canvas.height;
+                
+                // Set new canvas display dimensions
+                if (containerWidth < canvas.width) {
+                    canvas.style.width = containerWidth + 'px';
+                    canvas.style.height = (containerWidth / aspectRatio) + 'px';
+                } else {
+                    canvas.style.width = '';
+                    canvas.style.height = '';
+                }
+            }
+            
+            // Initial resize and listen for window resize
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Clear the canvas
+            function clearCanvas() {
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // Get random color from selected scheme
+            function getRandomColor() {
+                const scheme = colorSchemes[colorSelect.value];
+                return scheme[Math.floor(Math.random() * scheme.length)];
+            }
+            
+            // Generate the Sierpinski Carpet fractal
+            function generateSierpinskiCarpetFractal(iterations, animate = false) {
+                clearCanvas();
+                
+                const width = canvas.width;
+                const height = canvas.height;
+                const padding = 50;
+                const size = Math.min(width, height) - 2 * padding;
+                
+                // Define the 8 vertices of the Sierpinski Carpet (skipping center)
+                const vertices = [
+                    { x: padding, y: padding }, // top-left
+                    { x: padding + size/2, y: padding }, // top-middle
+                    { x: padding + size, y: padding }, // top-right
+                    { x: padding + size, y: padding + size/2 }, // middle-right
+                    { x: padding + size, y: padding + size }, // bottom-right
+                    { x: padding + size/2, y: padding + size }, // bottom-middle
+                    { x: padding, y: padding + size }, // bottom-left
+                    { x: padding, y: padding + size/2 } // middle-left
+                ];
+                
+                // Draw the square boundary
+                ctx.strokeStyle = getRandomColor();
+                ctx.beginPath();
+                ctx.moveTo(padding, padding);
+                ctx.lineTo(padding + size, padding);
+                ctx.lineTo(padding + size, padding + size);
+                ctx.lineTo(padding, padding + size);
+                ctx.closePath();
+                ctx.stroke();
+                
+                // Draw the vertices
+                vertices.forEach(vertex => {
+                    ctx.fillStyle = getRandomColor();
+                    ctx.beginPath();
+                    ctx.arc(vertex.x, vertex.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                
+                // Start at a random point
+                let x = width / 2;
+                let y = height / 2;
+                let step = 0;
+                
+                if (animate) {
+                    // Animate the generation
+                    function animateStep() {
+                        if (step >= iterations) {
+                            isAnimating = false;
+                            animateButton.querySelector('span').textContent = 'Animate';
+                            return;
+                        }
+                        
+                        const batchSize = parseInt(speedInput.value);
+                        for (let i = 0; i < batchSize && step < iterations; i++, step++) {
+                            // Select a random vertex
+                            const randomIndex = Math.floor(Math.random() * 8);
+                            const vertex = vertices[randomIndex];
+                            
+                            // Move 2/3 of the way towards the selected vertex
+                            x = x + (2/3) * (vertex.x - x);
+                            y = y + (2/3) * (vertex.y - y);
+                            
+                            // Plot the point with a color based on the vertex
+                            ctx.fillStyle = colorSchemes[colorSelect.value][randomIndex % colorSchemes[colorSelect.value].length];
+                            ctx.fillRect(x, y, 1, 1);
+                        }
+                        
+                        animationId = requestAnimationFrame(animateStep);
+                    }
+                    
+                    isAnimating = true;
+                    animateStep();
+                } else {
+                    // Generate all at once
+                    for (let i = 0; i < iterations; i++) {
+                        // Select a random vertex
+                        const randomIndex = Math.floor(Math.random() * 8);
+                        const vertex = vertices[randomIndex];
+                        
+                        // Move 2/3 of the way towards the selected vertex
+                        x = x + (2/3) * (vertex.x - x);
+                        y = y + (2/3) * (vertex.y - y);
+                        
+                        // Plot the point with a color based on the vertex
+                        ctx.fillStyle = colorSchemes[colorSelect.value][randomIndex % colorSchemes[colorSelect.value].length];
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+            }
+            
+            // Export the canvas as an image
+            function exportCanvasAsImage() {
+                const link = document.createElement('a');
+                link.download = 'sierpinski-carpet-fractal.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+            
+            // Generate button click handler
+            generateButton.addEventListener('click', function() {
+                if (isAnimating) {
+                    // Cancel any ongoing animation
+                    cancelAnimationFrame(animationId);
+                    isAnimating = false;
+                    animateButton.querySelector('span').textContent = 'Animate';
+                }
+                
+                const iterations = parseInt(iterationsInput.value);
+                generateSierpinskiCarpetFractal(iterations, false);
+            });
+            
+            // Animate button click handler
+            animateButton.addEventListener('click', function() {
+                if (isAnimating) {
+                    // Cancel any ongoing animation
+                    cancelAnimationFrame(animationId);
+                    isAnimating = false;
+                    animateButton.querySelector('span').textContent = 'Animate';
+                    return;
+                }
+                
+                const iterations = parseInt(iterationsInput.value);
+                isAnimating = true;
+                animateButton.querySelector('span').textContent = 'Stop';
+                generateSierpinskiCarpetFractal(iterations, true);
+            });
+            
+            // Reset button click handler
+            resetButton.addEventListener('click', function() {
+                if (isAnimating) {
+                    cancelAnimationFrame(animationId);
+                    isAnimating = false;
+                    animateButton.querySelector('span').textContent = 'Animate';
+                }
+                
+                clearCanvas();
+            });
+            
+            // Export button click handler
+            exportButton.addEventListener('click', exportCanvasAsImage);
+            
+            // Initialize
+            generateSierpinskiCarpetFractal(50000, false);
+        });
+    </script>
+</body>
+</html> 

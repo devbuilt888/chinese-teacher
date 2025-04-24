@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mandelbrot Set - Editor</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/fractal-pages.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/header-fix.css">
+</head>
+<body>
+    <header>
+        <h1>Mandelbrot Set</h1>
+    </header>
+    
+    <div class="container">
+        <div class="main-content">
+            <div class="editor-card">
+                <div class="card-header">
+                    <h2>Mandelbrot Set Explorer</h2>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="mandelbrot-canvas" width="800" height="600"></canvas>
+                </div>
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="iterations-input">Maximum Iterations</label>
+                        <input type="number" id="iterations-input" min="10" max="1000" step="10" value="100">
+                        <input type="range" id="iterations-range" min="10" max="1000" step="10" value="100">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="zoom-input">Zoom Level</label>
+                        <input type="number" id="zoom-input" min="0.1" max="10" step="0.1" value="1">
+                        <input type="range" id="zoom-range" min="0.1" max="10" step="0.1" value="1">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="center-x">Center X</label>
+                        <input type="number" id="center-x" value="-0.5" step="0.1">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="center-y">Center Y</label>
+                        <input type="number" id="center-y" value="0" step="0.1">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="color-select">Color Scheme</label>
+                        <select id="color-select">
+                            <option value="classic">Classic</option>
+                            <option value="rainbow">Rainbow</option>
+                            <option value="fire">Fire</option>
+                            <option value="ocean">Ocean</option>
+                            <option value="monochrome">Monochrome</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <div class="button-row">
+                        <button id="generate-button"><span>Generate</span></button>
+                        <button id="reset-button"><span>Reset</span></button>
+                        <button id="export-button"><span>Export Image</span></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>About the Mandelbrot Set</h3>
+                <p>
+                    The Mandelbrot set is one of the most famous fractals in mathematics. It's a set of complex 
+                    numbers for which the function f(z) = z² + c does not diverge when iterated starting with z = 0.
+                </p>
+                <p>
+                    Points in the complex plane are colored based on how quickly the sequence escapes to infinity 
+                    (if it does). Points that stay bounded within the set are typically colored black, while points 
+                    that escape are assigned colors based on how quickly they diverge.
+                </p>
+                
+                <h3>Generation Method</h3>
+                <p>
+                    For each pixel on the screen representing a complex point c:
+                </p>
+                <ol>
+                    <li>Start with z = 0</li>
+                    <li>Repeatedly apply the formula z = z² + c</li>
+                    <li>Count how many iterations it takes for |z| > 2 (the escape condition)</li>
+                    <li>Color the pixel based on this iteration count</li>
+                </ol>
+                
+                <h3>Mathematical Formula</h3>
+                <div class="formula">
+                    z_{n+1} = z_n² + c
+                    
+                    Where:
+                    - z is a complex number
+                    - c is a complex constant (the point being tested)
+                    - The sequence starts with z₀ = 0
+                    - Points for which |z| stays ≤ 2 are in the set
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <button class="return-button" title="Return to Dashboard" onclick="window.location.href='/'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5"></path>
+            <path d="M12 19l-7-7 7-7"></path>
+        </svg>
+    </button>
+    
+    <!-- Debug panel -->
+    <div id="debug-info" class="debug-info"></div>
+    
+    <!-- Include the main JavaScript file for the fractal implementations -->
+    <script src="../../main.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Canvas setup
+            const canvas = document.getElementById('mandelbrot-canvas');
+            if (!canvas) {
+                console.error('Mandelbrot canvas not found');
+                return;
+            }
+            const ctx = canvas.getContext('2d');
+            
+            // UI elements
+            const iterationsInput = document.getElementById('iterations-input');
+            const iterationsRange = document.getElementById('iterations-range');
+            const centerXInput = document.getElementById('center-x');
+            const centerYInput = document.getElementById('center-y');
+            const zoomInput = document.getElementById('zoom-input');
+            const zoomRange = document.getElementById('zoom-range');
+            const colorSelect = document.getElementById('color-select');
+            const generateButton = document.getElementById('generate-button');
+            const resetButton = document.getElementById('reset-button');
+            const exportButton = document.getElementById('export-button');
+            
+            // Mandelbrot Set instance
+            let mandelbrotFractal = null;
+            
+            // Only set up event listeners if elements exist
+            if (iterationsRange && iterationsInput) {
+                iterationsRange.addEventListener('input', () => {
+                    iterationsInput.value = iterationsRange.value;
+                });
+                
+                iterationsInput.addEventListener('input', () => {
+                    iterationsRange.value = iterationsInput.value;
+                });
+            }
+            
+            if (zoomRange && zoomInput) {
+                zoomRange.addEventListener('input', () => {
+                    zoomInput.value = zoomRange.value;
+                });
+                
+                zoomInput.addEventListener('input', () => {
+                    zoomRange.value = zoomInput.value;
+                });
+            }
+            
+            // Color schemes mapping
+            const colorSchemes = {
+                classic: ['#000000', '#0000BB', '#00BBBB', '#00FF00', '#BBBB00', '#FF0000'],
+                rainbow: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#8f00ff'],
+                fire: ['#ff0000', '#ff5a00', '#ff9a00', '#ffce00', '#ffe808'],
+                ocean: ['#006994', '#0099db', '#87ceeb', '#2a52be', '#120a8f'],
+                monochrome: ['#ffffff', '#cccccc', '#999999', '#666666', '#333333']
+            };
+            
+            // Resize canvas to maintain aspect ratio
+            function resizeCanvas() {
+                if (!canvas) return;
+                const container = canvas.parentElement;
+                if (!container) return;
+                
+                const containerWidth = container.clientWidth - 40; // Accounting for padding
+                const aspectRatio = canvas.width / canvas.height;
+                
+                // Set new canvas display dimensions
+                if (containerWidth < canvas.width) {
+                    canvas.style.width = containerWidth + 'px';
+                    canvas.style.height = (containerWidth / aspectRatio) + 'px';
+                } else {
+                    canvas.style.width = '';
+                    canvas.style.height = '';
+                }
+            }
+            
+            // Initial resize and listen for window resize
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Clear the canvas
+            function clearCanvas() {
+                if (!ctx) return;
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // Get selected color scheme
+            function getColorScheme() {
+                if (!colorSelect) return colorSchemes.classic;
+                return colorSchemes[colorSelect.value] || colorSchemes.classic;
+            }
+            
+            // Generate the Mandelbrot Set fractal
+            function generateMandelbrotFractal() {
+                if (!canvas) return;
+                
+                // Get parameters from inputs
+                const iterations = iterationsInput ? parseInt(iterationsInput.value) : 100;
+                const zoom = zoomInput ? parseFloat(zoomInput.value) : 1;
+                const centerX = centerXInput ? parseFloat(centerXInput.value) : -0.5;
+                const centerY = centerYInput ? parseFloat(centerYInput.value) : 0;
+                
+                // Initialize the fractal if not already created
+                if (!mandelbrotFractal) {
+                    if (typeof window.MandelbrotFractal === 'function') {
+                        mandelbrotFractal = new window.MandelbrotFractal('mandelbrot-canvas', iterations);
+                    } else {
+                        console.error('MandelbrotFractal class not found');
+                        return;
+                    }
+                }
+                
+                // Configure the fractal
+                if (typeof mandelbrotFractal.setMaxIterations === 'function') {
+                    mandelbrotFractal.setMaxIterations(iterations);
+                }
+                
+                if (typeof mandelbrotFractal.setZoom === 'function') {
+                    mandelbrotFractal.setZoom(zoom);
+                }
+                
+                if (typeof mandelbrotFractal.setCenter === 'function') {
+                    mandelbrotFractal.setCenter(centerX, centerY);
+                }
+                
+                // Generate the fractal
+                mandelbrotFractal.generate();
+            }
+            
+            // Export the canvas as an image
+            function exportCanvasAsImage() {
+                if (!canvas) return;
+                const link = document.createElement('a');
+                link.download = 'mandelbrot-set.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+            
+            // Add event listeners if buttons exist
+            if (generateButton) {
+                generateButton.addEventListener('click', function() {
+                    generateMandelbrotFractal();
+                });
+            }
+            
+            if (resetButton) {
+                resetButton.addEventListener('click', function() {
+                    clearCanvas();
+                });
+            }
+            
+            if (exportButton) {
+                exportButton.addEventListener('click', exportCanvasAsImage);
+            }
+            
+            // Initialize the fractal with default parameters
+            // We'll use setTimeout to ensure the DOM is fully loaded
+            setTimeout(() => {
+                generateMandelbrotFractal();
+            }, 200);
+        });
+    </script>
+</body>
+</html> 

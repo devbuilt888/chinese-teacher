@@ -1,0 +1,192 @@
+/* Main container for all fractals */
+.fractals-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px;
+  background-color: #121212;
+  min-height: 100vh;
+}
+
+/* Section title styling */
+.section-title {
+  width: 100%;
+  color: #00ffea;
+  text-shadow: 0 0 10px #00ffea, 0 0 20px #00ffea;
+  font-size: 2.5rem;
+  margin: 30px 0 20px;
+  text-align: center;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 2px;
+}
+
+/* Individual fractal card styling */
+.fractal-card {
+  background-color: #1a1a1a;
+  border-radius: 10px;
+  padding: 15px;
+  width: 450px;
+  border: 1px solid #333;
+  box-shadow: 0 0 15px rgba(0, 255, 234, 0.3);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.fractal-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 25px rgba(0, 255, 234, 0.5);
+}
+
+/* Fractal card title */
+.fractal-card h3 {
+  color: #00ffea;
+  text-shadow: 0 0 5px #00ffea;
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-family: 'Orbitron', sans-serif;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+/* Canvas element */
+.fractal-canvas {
+  width: 100%;
+  height: auto;
+  border-radius: 5px;
+  display: block;
+  margin: 0 auto 15px;
+  background-color: #000;
+  box-shadow: 0 0 10px rgba(0, 255, 234, 0.2);
+}
+
+/* Controls container */
+.controls-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+/* Control group (label + input) */
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ccc;
+}
+
+/* Control labels */
+.control-group label {
+  flex: 1;
+  font-size: 0.9rem;
+  font-family: 'Arial', sans-serif;
+}
+
+/* Value display for controls */
+.value-display {
+  background-color: #333;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  color: #00ffea;
+  width: 40px;
+  text-align: center;
+}
+
+/* Range input styling */
+input[type="range"] {
+  flex: 2;
+  height: 6px;
+  appearance: none;
+  background: linear-gradient(to right, #005a52, #00ffea);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background-color: #00ffea;
+  border-radius: 50%;
+  box-shadow: 0 0 5px #00ffea;
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background-color: #00ffea;
+  border-radius: 50%;
+  box-shadow: 0 0 5px #00ffea;
+  cursor: pointer;
+  border: none;
+}
+
+/* Generate button */
+.generate-button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background-color: transparent;
+  color: #00ffea;
+  border: 1px solid #00ffea;
+  border-radius: 5px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  box-shadow: 0 0 5px rgba(0, 255, 234, 0.3);
+}
+
+.generate-button:hover {
+  background-color: rgba(0, 255, 234, 0.1);
+  box-shadow: 0 0 15px rgba(0, 255, 234, 0.5);
+}
+
+.generate-button:active {
+  transform: scale(0.98);
+}
+
+/* Main page header */
+.page-header {
+  background-color: #121212;
+  color: #00ffea;
+  text-shadow: 0 0 10px #00ffea, 0 0 20px #00ffea;
+  text-align: center;
+  padding: 40px 0;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+}
+
+.page-header h1 {
+  font-size: 3.5rem;
+  margin: 0;
+}
+
+.page-header p {
+  color: #ccc;
+  font-size: 1.2rem;
+  max-width: 800px;
+  margin: 20px auto 0;
+  font-family: 'Arial', sans-serif;
+  letter-spacing: normal;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .fractal-card {
+    width: 100%;
+    max-width: 450px;
+  }
+  
+  .page-header h1 {
+    font-size: 2.5rem;
+  }
+  
+  .section-title {
+    font-size: 2rem;
+  }
+} 

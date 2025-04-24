@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phoenix Fractal - Editor</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/fractal-pages.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/header-fix.css">
+</head>
+<body>
+    <header>
+        <h1>Phoenix Fractal</h1>
+    </header>
+    
+    <div class="container">
+        <div class="main-content">
+            <div class="editor-card">
+                <div class="card-header">
+                    <h2>Phoenix Fractal Explorer</h2>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="phoenix-canvas" width="800" height="600"></canvas>
+                </div>
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="iterations-input">Maximum Iterations</label>
+                        <input type="number" id="iterations-input" min="50" max="500" step="10" value="100">
+                        <input type="range" id="iterations-range" min="50" max="500" step="10" value="100">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="parameter-input">Parameter P</label>
+                        <input type="number" id="parameter-input" min="-1" max="1" step="0.01" value="0.56">
+                        <input type="range" id="parameter-range" min="-1" max="1" step="0.01" value="0.56">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="zoom-input">Zoom Level</label>
+                        <input type="number" id="zoom-input" min="0.5" max="5" step="0.1" value="0.8">
+                        <input type="range" id="zoom-range" min="0.5" max="5" step="0.1" value="0.8">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="center-x">Center X</label>
+                        <input type="number" id="center-x" value="0" step="0.1">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="center-y">Center Y</label>
+                        <input type="number" id="center-y" value="0" step="0.1">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="color-select">Color Scheme</label>
+                        <select id="color-select">
+                            <option value="fire">Fire</option>
+                            <option value="rainbow">Rainbow</option>
+                            <option value="ocean">Ocean</option>
+                            <option value="neon">Neon</option>
+                            <option value="monochrome">Monochrome</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <div class="button-row">
+                        <button id="generate-button"><span>Generate</span></button>
+                        <button id="reset-button"><span>Reset</span></button>
+                        <button id="export-button"><span>Export Image</span></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>About the Phoenix Fractal</h3>
+                <p>
+                    The Phoenix fractal is a fascinating generalization of the Mandelbrot set that incorporates previous iteration values.
+                    This creates beautiful flame-like patterns with intricate spirals and delicate structures.
+                </p>
+                <p>
+                    Named for its resemblance to a bird rising from flames, the Phoenix fractal is characterized by its
+                    dynamic swirling patterns that seem to fold back on themselves, creating a sense of movement and transformation.
+                </p>
+                
+                <h3>Generation Method</h3>
+                <p>
+                    For each pixel on the screen representing a complex point c:
+                </p>
+                <ol>
+                    <li>Initialize z₀ = 0 and z₋₁ = 0</li>
+                    <li>Apply the Phoenix iteration: z_{n+1} = z_n² + c + p·z_{n-1}</li>
+                    <li>Continue until z escapes (|z| > 2) or reaches maximum iterations</li>
+                    <li>Color the pixel based on iteration count and escape speed</li>
+                </ol>
+                
+                <h3>Mathematical Formula</h3>
+                <div class="formula">
+                    z_{n+1} = z_n² + c + p·z_{n-1}
+                    
+                    Where:
+                    - z_n is the current value in the complex plane
+                    - z_{n-1} is the previous value
+                    - c is the complex coordinate being tested
+                    - p is a real parameter that controls the fractal's appearance
+                </div>
+                
+                <p>
+                    The parameter p dramatically alters the appearance of the fractal, creating different flame-like patterns
+                    as it varies. Values between -1 and 1 produce the most interesting results.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <button class="return-button" title="Return to Dashboard" onclick="window.location.href='/'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5"></path>
+            <path d="M12 19l-7-7 7-7"></path>
+        </svg>
+    </button>
+    
+    <!-- Debug panel -->
+    <div id="debug-info" class="debug-info"></div>
+    
+    <!-- Include the main JavaScript file for the fractal implementations -->
+    <script src="../../main.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Canvas setup
+            const canvas = document.getElementById('phoenix-canvas');
+            if (!canvas) {
+                console.error('Phoenix canvas not found');
+                return;
+            }
+            const ctx = canvas.getContext('2d');
+            
+            // UI elements
+            const iterationsInput = document.getElementById('iterations-input');
+            const iterationsRange = document.getElementById('iterations-range');
+            const parameterInput = document.getElementById('parameter-input');
+            const parameterRange = document.getElementById('parameter-range');
+            const centerXInput = document.getElementById('center-x');
+            const centerYInput = document.getElementById('center-y');
+            const zoomInput = document.getElementById('zoom-input');
+            const zoomRange = document.getElementById('zoom-range');
+            const colorSelect = document.getElementById('color-select');
+            const generateButton = document.getElementById('generate-button');
+            const resetButton = document.getElementById('reset-button');
+            const exportButton = document.getElementById('export-button');
+            
+            // Phoenix fractal instance
+            let phoenixFractal = null;
+            
+            // Only set up event listeners if elements exist
+            if (iterationsRange && iterationsInput) {
+                iterationsRange.addEventListener('input', () => {
+                    iterationsInput.value = iterationsRange.value;
+                });
+                
+                iterationsInput.addEventListener('input', () => {
+                    iterationsRange.value = iterationsInput.value;
+                });
+            }
+            
+            if (parameterRange && parameterInput) {
+                parameterRange.addEventListener('input', () => {
+                    parameterInput.value = parameterRange.value;
+                });
+                
+                parameterInput.addEventListener('input', () => {
+                    parameterRange.value = parameterInput.value;
+                });
+            }
+            
+            if (zoomRange && zoomInput) {
+                zoomRange.addEventListener('input', () => {
+                    zoomInput.value = zoomRange.value;
+                });
+                
+                zoomInput.addEventListener('input', () => {
+                    zoomRange.value = zoomInput.value;
+                });
+            }
+            
+            // Color schemes mapping
+            const colorSchemes = {
+                fire: ['#ff0000', '#ff5a00', '#ff9a00', '#ffce00', '#ffe808'],
+                rainbow: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#8f00ff'],
+                ocean: ['#006994', '#0099db', '#87ceeb', '#2a52be', '#120a8f'],
+                neon: ['#00ffff', '#ff00ff', '#00ff00', '#ffff00', '#ff00ff'],
+                monochrome: ['#ffffff', '#cccccc', '#999999', '#666666', '#333333']
+            };
+            
+            // Resize canvas to maintain aspect ratio
+            function resizeCanvas() {
+                if (!canvas) return;
+                const container = canvas.parentElement;
+                if (!container) return;
+                
+                const containerWidth = container.clientWidth - 40; // Accounting for padding
+                const aspectRatio = canvas.width / canvas.height;
+                
+                // Set new canvas display dimensions
+                if (containerWidth < canvas.width) {
+                    canvas.style.width = containerWidth + 'px';
+                    canvas.style.height = (containerWidth / aspectRatio) + 'px';
+                } else {
+                    canvas.style.width = '';
+                    canvas.style.height = '';
+                }
+            }
+            
+            // Initial resize and listen for window resize
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Clear the canvas
+            function clearCanvas() {
+                if (!ctx) return;
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // Get selected color scheme
+            function getColorScheme() {
+                if (!colorSelect) return colorSchemes.fire;
+                return colorSchemes[colorSelect.value] || colorSchemes.fire;
+            }
+            
+            // Generate the Phoenix fractal
+            function generatePhoenixFractal() {
+                if (!canvas) return;
+                
+                // Get parameters from inputs
+                const iterations = iterationsInput ? parseInt(iterationsInput.value) : 100;
+                const parameter = parameterInput ? parseFloat(parameterInput.value) : 0.56;
+                const zoom = zoomInput ? parseFloat(zoomInput.value) : 0.8;
+                const centerX = centerXInput ? parseFloat(centerXInput.value) : 0;
+                const centerY = centerYInput ? parseFloat(centerYInput.value) : 0;
+                
+                // Initialize the fractal if not already created
+                if (!phoenixFractal) {
+                    if (typeof window.PhoenixFractal === 'function') {
+                        phoenixFractal = new window.PhoenixFractal('phoenix-canvas', iterations);
+                    } else {
+                        console.error('PhoenixFractal class not found');
+                        return;
+                    }
+                }
+                
+                // Configure the fractal
+                if (typeof phoenixFractal.setMaxIterations === 'function') {
+                    phoenixFractal.setMaxIterations(iterations);
+                }
+                
+                if (typeof phoenixFractal.setZoom === 'function') {
+                    phoenixFractal.setZoom(zoom);
+                }
+                
+                if (typeof phoenixFractal.setCenter === 'function') {
+                    phoenixFractal.setCenter(centerX, centerY);
+                }
+                
+                if (typeof phoenixFractal.setParameter === 'function') {
+                    phoenixFractal.setParameter(parameter);
+                }
+                
+                // Generate the fractal
+                phoenixFractal.generate();
+            }
+            
+            // Export the canvas as an image
+            function exportCanvasAsImage() {
+                if (!canvas) return;
+                const link = document.createElement('a');
+                link.download = 'phoenix-fractal.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+            
+            // Add event listeners if buttons exist
+            if (generateButton) {
+                generateButton.addEventListener('click', function() {
+                    generatePhoenixFractal();
+                });
+            }
+            
+            if (resetButton) {
+                resetButton.addEventListener('click', function() {
+                    clearCanvas();
+                });
+            }
+            
+            if (exportButton) {
+                exportButton.addEventListener('click', exportCanvasAsImage);
+            }
+            
+            // Initialize the fractal with default parameters
+            // We'll use setTimeout to ensure the DOM is fully loaded
+            setTimeout(() => {
+                generatePhoenixFractal();
+            }, 200);
+        });
+    </script>
+</body>
+</html> 

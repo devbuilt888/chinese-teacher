@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modified Square Fractal Editor</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/fractal-pages.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/header-fix.css">
+</head>
+<body>
+    <header>
+        <h1>Modified Square Fractal Editor</h1>
+    </header>
+    
+    <div class="container">
+        <div class="main-content">
+            <div class="editor-card">
+                <div class="card-header">
+                    <h2>Modified Square Fractal Editor</h2>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="modified-square-canvas" width="800" height="600"></canvas>
+                </div>
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="iterations-input">Iterations</label>
+                        <input type="number" id="iterations-input" min="1000" max="200000" step="1000" value="50000">
+                        <input type="range" id="iterations-range" min="1000" max="200000" step="1000" value="50000">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="contraction-input">Contraction Ratio</label>
+                        <input type="number" id="contraction-input" min="0.3" max="0.7" step="0.01" value="0.5">
+                        <input type="range" id="contraction-range" min="0.3" max="0.7" step="0.01" value="0.5">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="color-select">Color Scheme</label>
+                        <select id="color-select">
+                            <option value="teal">Teal</option>
+                            <option value="neon">Neon</option>
+                            <option value="rainbow">Rainbow</option>
+                            <option value="fire">Fire</option>
+                            <option value="cool">Cool</option>
+                            <option value="monochrome">Monochrome</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="speed-input">Animation Speed</label>
+                        <input type="number" id="speed-input" min="1" max="5000" step="100" value="1000">
+                        <input type="range" id="speed-range" min="1" max="5000" step="100" value="1000">
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <div class="button-row">
+                        <button id="generate-button"><span>Generate</span></button>
+                        <button id="animate-button"><span>Animate</span></button>
+                        <button id="reset-button"><span>Reset</span></button>
+                        <button id="export-button"><span>Export Image</span></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>About the Modified Square Fractal</h3>
+                <p>
+                    The Modified Square Fractal is a captivating variant of the chaos game played on a square. 
+                    This fractal introduces several key modifications to the standard approach to create more 
+                    intricate and organic-looking patterns.
+                </p>
+                
+                <p>
+                    What makes this fractal unique is how it modifies both the underlying geometry and the 
+                    rules of the chaos game to produce asymmetric, non-uniform patterns.
+                </p>
+                
+                <h3>How It Works</h3>
+                <p>
+                    The modified square fractal incorporates these key variations:
+                </p>
+                <ol>
+                    <li><strong>Asymmetric Base Shape</strong>: The vertices of the square are slightly offset from their regular positions</li>
+                    <li><strong>Varying Contraction Rates</strong>: Different rates (0.5 or 0.55) are used depending on which vertex is selected</li>
+                    <li><strong>Complex Selection Rules</strong>: Vertices are chosen with constraints and varying probabilities. For example:
+                        <ul>
+                            <li>If the previous vertex was top-left, the bottom-right cannot be chosen next</li>
+                            <li>Opposite vertices have a 40% selection probability in certain cases</li>
+                        </ul>
+                    </li>
+                </ol>
+                
+                <h3>Mathematical Formula</h3>
+                <div class="formula">
+                    P_{n+1} = (1-r) * P_n + r * V_i
+                    
+                    Where:
+                    - r varies based on which vertex is chosen (0.5 or 0.55)
+                    - V_i is selected using complex probability rules
+                    - Vertex positions are slightly offset from regular square
+                </div>
+                
+                <p>
+                    These modifications create a fractal that, while based on simple principles,
+                    exhibits emergent complexity and rich, asymmetric patterns. Unlike the regular 
+                    square fractal, this version produces structures that appear more natural and less rigidly geometric.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <button class="return-button" title="Return to Dashboard" onclick="window.location.href='/'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5"></path>
+            <path d="M12 19l-7-7 7-7"></path>
+        </svg>
+    </button>
+    
+    <!-- Debug panel -->
+    <div id="debug-info" class="debug-info"></div>
+
+    <script src="/main.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Canvas setup
+            const canvas = document.getElementById('modified-square-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // UI elements
+            const iterationsInput = document.getElementById('iterations-input');
+            const iterationsRange = document.getElementById('iterations-range');
+            const contractionInput = document.getElementById('contraction-input');
+            const contractionRange = document.getElementById('contraction-range');
+            const colorSelect = document.getElementById('color-select');
+            const speedInput = document.getElementById('speed-input');
+            const speedRange = document.getElementById('speed-range');
+            const generateButton = document.getElementById('generate-button');
+            const animateButton = document.getElementById('animate-button');
+            const resetButton = document.getElementById('reset-button');
+            const exportButton = document.getElementById('export-button');
+            
+            // Animation variables
+            let animationId = null;
+            let isAnimating = false;
+            
+            // Sync range and number inputs
+            iterationsRange.addEventListener('input', () => {
+                iterationsInput.value = iterationsRange.value;
+            });
+            
+            iterationsInput.addEventListener('input', () => {
+                iterationsRange.value = iterationsInput.value;
+            });
+            
+            contractionRange.addEventListener('input', () => {
+                contractionInput.value = contractionRange.value;
+            });
+            
+            contractionInput.addEventListener('input', () => {
+                contractionRange.value = contractionInput.value;
+            });
+            
+            speedRange.addEventListener('input', () => {
+                speedInput.value = speedRange.value;
+            });
+            
+            speedInput.addEventListener('input', () => {
+                speedRange.value = speedInput.value;
+            });
+            
+            // Color schemes
+            const colorSchemes = {
+                teal: ['#00CED1', '#20B2AA', '#5F9EA0', '#008B8B', '#40E0D0'], 
+                neon: ['#00ffff', '#ff00ff', '#00ff00', '#ffff00', '#ff00ff'],
+                rainbow: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff'],
+                fire: ['#ff0000', '#ff5a00', '#ff9a00', '#ffce00', '#ffe808'],
+                cool: ['#0077b6', '#00b4d8', '#90e0ef', '#caf0f8', '#48cae4'],
+                monochrome: ['#ffffff', '#dddddd', '#bbbbbb', '#999999', '#666666']
+            };
+            
+            // Resize canvas to maintain aspect ratio
+            function resizeCanvas() {
+                const container = canvas.parentElement;
+                const containerWidth = container.clientWidth - 40; // Accounting for padding
+                const aspectRatio = canvas.width / canvas.height;
+                
+                // Set new canvas display dimensions
+                if (containerWidth < canvas.width) {
+                    canvas.style.width = containerWidth + 'px';
+                    canvas.style.height = (containerWidth / aspectRatio) + 'px';
+                } else {
+                    canvas.style.width = '';
+                    canvas.style.height = '';
+                }
+            }
+            
+            // Initial resize and listen for window resize
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Clear the canvas
+            function clearCanvas() {
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // Get random color from selected scheme
+            function getRandomColor() {
+                const scheme = colorSchemes[colorSelect.value];
+                return scheme[Math.floor(Math.random() * scheme.length)];
+            }
+            
+            // Modified Square Fractal implementation
+            function generateModifiedSquareFractal(iterations, animate = false) {
+                clearCanvas();
+                
+                const width = canvas.width;
+                const height = canvas.height;
+                const padding = 50;
+                
+                // Define the vertices of a modified square (slightly offset from regular square)
+                const vertices = [
+                    { x: padding, y: padding }, // top-left
+                    { x: width - padding, y: padding * 1.2 }, // top-right
+                    { x: width - padding * 1.2, y: height - padding }, // bottom-right
+                    { x: padding * 1.1, y: height - padding * 1.1 } // bottom-left
+                ];
+                
+                // Draw the square boundary
+                ctx.strokeStyle = getRandomColor();
+                ctx.beginPath();
+                ctx.moveTo(vertices[0].x, vertices[0].y);
+                ctx.lineTo(vertices[1].x, vertices[1].y);
+                ctx.lineTo(vertices[2].x, vertices[2].y);
+                ctx.lineTo(vertices[3].x, vertices[3].y);
+                ctx.closePath();
+                ctx.stroke();
+                
+                // Draw the vertices
+                vertices.forEach(vertex => {
+                    ctx.fillStyle = getRandomColor();
+                    ctx.beginPath();
+                    ctx.arc(vertex.x, vertex.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                
+                // Choose random initial point
+                let x = width / 2;
+                let y = height / 2;
+                let step = 0;
+                
+                // Track the previous vertex index
+                let prevIndex = -1;
+                
+                // Base contraction rate
+                const baseRate = parseFloat(contractionInput.value);
+                
+                if (animate) {
+                    // Animate the generation
+                    function animateStep() {
+                        if (step >= iterations) {
+                            isAnimating = false;
+                            return;
+                        }
+                        
+                        const batchSize = parseInt(speedInput.value);
+                        for (let i = 0; i < batchSize && step < iterations; i++, step++) {
+                            // Choose a random vertex with constraints
+                            let randomIndex;
+                            
+                            // Modified selection rule
+                            if (prevIndex === -1) {
+                                // First iteration - choose any vertex
+                                randomIndex = Math.floor(Math.random() * 4);
+                            } else if (prevIndex === 0) {
+                                // If previous was top-left, can't go to bottom-right
+                                randomIndex = Math.floor(Math.random() * 3);
+                                if (randomIndex >= 2) randomIndex = 3; // Skip the forbidden vertex
+                            } else if (prevIndex === 2) {
+                                // If previous was bottom-right, can't go to top-left
+                                randomIndex = 1 + Math.floor(Math.random() * 3);
+                                if (randomIndex >= 4) randomIndex = 0; // Wrap around
+                            } else {
+                                // Otherwise, any vertex is possible, but with different probabilities
+                                const r = Math.random();
+                                if (r < 0.4) {
+                                    // 40% chance of choosing the vertex opposite to the previous
+                                    randomIndex = (prevIndex + 2) % 4;
+                                } else {
+                                    // 60% chance of choosing one of the adjacent vertices
+                                    randomIndex = (prevIndex + (Math.random() < 0.5 ? 1 : 3)) % 4;
+                                }
+                            }
+                            
+                            prevIndex = randomIndex;
+                            const vertex = vertices[randomIndex];
+                            
+                            // Different contraction rates for different vertices
+                            const rate = randomIndex % 2 === 0 ? baseRate : baseRate + 0.05;
+                            x = (1 - rate) * x + rate * vertex.x;
+                            y = (1 - rate) * y + rate * vertex.y;
+                            
+                            // Plot the point with a color based on the vertex
+                            ctx.fillStyle = colorSchemes[colorSelect.value][randomIndex % colorSchemes[colorSelect.value].length];
+                            const pointSize = randomIndex % 2 === 0 ? 1 : 1.5;
+                            ctx.fillRect(x, y, pointSize, pointSize);
+                        }
+                        
+                        animationId = requestAnimationFrame(animateStep);
+                    }
+                    
+                    isAnimating = true;
+                    animateStep();
+                } else {
+                    // Generate all at once
+                    for (let i = 0; i < iterations; i++) {
+                        // Choose a random vertex with constraints
+                        let randomIndex;
+                        
+                        // Modified selection rule
+                        if (prevIndex === -1) {
+                            // First iteration - choose any vertex
+                            randomIndex = Math.floor(Math.random() * 4);
+                        } else if (prevIndex === 0) {
+                            // If previous was top-left, can't go to bottom-right
+                            randomIndex = Math.floor(Math.random() * 3);
+                            if (randomIndex >= 2) randomIndex = 3; // Skip the forbidden vertex
+                        } else if (prevIndex === 2) {
+                            // If previous was bottom-right, can't go to top-left
+                            randomIndex = 1 + Math.floor(Math.random() * 3);
+                            if (randomIndex >= 4) randomIndex = 0; // Wrap around
+                        } else {
+                            // Otherwise, any vertex is possible, but with different probabilities
+                            const r = Math.random();
+                            if (r < 0.4) {
+                                // 40% chance of choosing the vertex opposite to the previous
+                                randomIndex = (prevIndex + 2) % 4;
+                            } else {
+                                // 60% chance of choosing one of the adjacent vertices
+                                randomIndex = (prevIndex + (Math.random() < 0.5 ? 1 : 3)) % 4;
+                            }
+                        }
+                        
+                        prevIndex = randomIndex;
+                        const vertex = vertices[randomIndex];
+                        
+                        // Different contraction rates for different vertices
+                        const rate = randomIndex % 2 === 0 ? baseRate : baseRate + 0.05;
+                        x = (1 - rate) * x + rate * vertex.x;
+                        y = (1 - rate) * y + rate * vertex.y;
+                        
+                        // Skip first 20 iterations (transient phase)
+                        if (i > 20) {
+                            // Plot the point with a color based on the vertex
+                            ctx.fillStyle = colorSchemes[colorSelect.value][randomIndex % colorSchemes[colorSelect.value].length];
+                            const pointSize = randomIndex % 2 === 0 ? 1 : 1.5;
+                            ctx.fillRect(x, y, pointSize, pointSize);
+                        }
+                    }
+                }
+            }
+            
+            // Export the canvas as an image
+            function exportCanvasAsImage() {
+                const link = document.createElement('a');
+                link.download = 'modified-square-fractal.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+            
+            // Generate button click handler
+            generateButton.addEventListener('click', function() {
+                if (isAnimating) {
+                    // Cancel any ongoing animation
+                    cancelAnimationFrame(animationId);
+                    isAnimating = false;
+                }
+                
+                const iterations = parseInt(iterationsInput.value);
+                generateModifiedSquareFractal(iterations, false);
+            });
+            
+            // Animate button click handler
+            animateButton.addEventListener('click', function() {
+                if (isAnimating) {
+                    // Cancel any ongoing animation
+                    cancelAnimationFrame(animationId);
+                    isAnimating = false;
+                    animateButton.querySelector('span').textContent = 'Animate';
+                    return;
+                }
+                
+                const iterations = parseInt(iterationsInput.value);
+                isAnimating = true;
+                animateButton.querySelector('span').textContent = 'Stop';
+                generateModifiedSquareFractal(iterations, true);
+            });
+            
+            // Reset button click handler
+            resetButton.addEventListener('click', function() {
+                if (isAnimating) {
+                    cancelAnimationFrame(animationId);
+                    isAnimating = false;
+                    animateButton.querySelector('span').textContent = 'Animate';
+                }
+                
+                clearCanvas();
+            });
+            
+            // Export button click handler
+            exportButton.addEventListener('click', exportCanvasAsImage);
+            
+            // Initialize
+            generateModifiedSquareFractal(50000, false);
+        });
+    </script>
+</body>
+</html> 

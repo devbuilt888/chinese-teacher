@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lyapunov Fractal - Editor</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/fractal-pages.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/header-fix.css">
+</head>
+<body>
+    <header>
+            <h1>Lyapunov Fractal</h1>
+    </header>
+    
+    <div class="container">
+        <div class="main-content">
+            <div class="editor-card">
+                <div class="card-header">
+                    <h2>Lyapunov Fractal Explorer</h2>
+        </div>
+                <div class="canvas-container">
+                    <canvas id="lyapunov-canvas" width="800" height="600"></canvas>
+                </div>
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="sequence-input">Sequence</label>
+                        <input type="text" id="sequence-input" value="AB" pattern="[ABab]+" title="Only A and B characters are allowed">
+            </div>
+            
+                    <div class="control-group">
+                        <label for="param-a-input">Parameter A</label>
+                        <input type="number" id="param-a-input" min="2" max="4" step="0.01" value="3.8">
+                        <input type="range" id="param-a-range" min="2" max="4" step="0.01" value="3.8">
+                    </div>
+                
+                <div class="control-group">
+                        <label for="param-b-input">Parameter B</label>
+                        <input type="number" id="param-b-input" min="2" max="4" step="0.01" value="3.4">
+                        <input type="range" id="param-b-range" min="2" max="4" step="0.01" value="3.4">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="iterations-input">Maximum Iterations</label>
+                        <input type="number" id="iterations-input" min="50" max="500" step="10" value="100">
+                        <input type="range" id="iterations-range" min="50" max="500" step="10" value="100">
+                </div>
+                
+                <div class="control-group">
+                        <label for="color-select">Color Scheme</label>
+                        <select id="color-select">
+                            <option value="standard">Standard (Green-Red)</option>
+                            <option value="rainbow">Rainbow</option>
+                            <option value="fire">Fire</option>
+                            <option value="ocean">Ocean</option>
+                            <option value="monochrome">Monochrome</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <div class="button-row">
+                        <button id="generate-button"><span>Generate</span></button>
+                        <button id="reset-button"><span>Reset</span></button>
+                        <button id="export-button"><span>Export Image</span></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>About the Lyapunov Fractal</h3>
+                <p>
+                    The Lyapunov fractal provides a visual representation of chaos theory, mapping the stability of 
+                    a dynamical system under different parameter values. It's named after Russian mathematician Aleksandr Lyapunov.
+                </p>
+                <p>
+                    This fractal visualizes how a simple system can transition between ordered, stable behavior 
+                    and chaotic, unpredictable behavior as its parameters change. The different colors represent 
+                    different degrees of stability or chaos within the system.
+                </p>
+                
+                <h3>Generation Method</h3>
+                <p>
+                    The Lyapunov fractal is generated through the following steps:
+                </p>
+                <ol>
+                    <li>Define a sequence of parameters (e.g., "AABAB") where each character represents which parameter (A or B) to use</li>
+                    <li>For each pixel in the image, calculate the Lyapunov exponent using parameters A and B mapped to the coordinates</li>
+                    <li>The calculation starts with x₀ = 0.5 and applies the logistic equation repeatedly: xₙ₊₁ = rₙ·xₙ·(1-xₙ)</li>
+                    <li>The exponent λ is calculated as the average of log|r·(1-2x)| over many iterations</li>
+                    <li>Color the pixel based on the calculated exponent: negative values (stable) appear in green/blue tones, 
+                    while positive values (chaotic) appear in red/yellow tones</li>
+                </ol>
+                
+                <h3>Mathematical Formula</h3>
+                <div class="formula">
+                    Logistic Map: xₙ₊₁ = r·xₙ·(1-xₙ)
+                    
+                    Lyapunov Exponent: λ = (1/n)·∑ ln|r·(1-2xᵢ)|
+                    
+                    Where:
+                    - r alternates between values A and B according to the sequence
+                    - λ < 0 indicates stability (ordered behavior)
+                    - λ > 0 indicates chaos (unpredictable behavior)
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <button class="return-button" title="Return to Dashboard" onclick="window.location.href='/'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5"></path>
+            <path d="M12 19l-7-7 7-7"></path>
+        </svg>
+    </button>
+    
+    <!-- Debug panel -->
+    <div id="debug-info" class="debug-info"></div>
+    
+    <!-- Include the main JavaScript file for the fractal implementations -->
+    <script src="../../main.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Canvas setup
+            const canvas = document.getElementById('lyapunov-canvas');
+            if (!canvas) {
+                console.error('Lyapunov canvas not found');
+                return;
+            }
+            const ctx = canvas.getContext('2d');
+            
+            // UI elements
+            const sequenceInput = document.getElementById('sequence-input');
+            const paramAInput = document.getElementById('param-a-input');
+            const paramARange = document.getElementById('param-a-range');
+            const paramBInput = document.getElementById('param-b-input');
+            const paramBRange = document.getElementById('param-b-range');
+            const iterationsInput = document.getElementById('iterations-input');
+            const iterationsRange = document.getElementById('iterations-range');
+            const colorSelect = document.getElementById('color-select');
+            const generateButton = document.getElementById('generate-button');
+            const resetButton = document.getElementById('reset-button');
+            const exportButton = document.getElementById('export-button');
+            
+            // Lyapunov fractal instance
+            let lyapunovFractal = null;
+            
+            // Only set up event listeners if elements exist
+            if (iterationsRange && iterationsInput) {
+                iterationsRange.addEventListener('input', () => {
+                    iterationsInput.value = iterationsRange.value;
+                });
+                
+                iterationsInput.addEventListener('input', () => {
+                    iterationsRange.value = iterationsInput.value;
+                });
+            }
+            
+            if (paramARange && paramAInput) {
+                paramARange.addEventListener('input', () => {
+                    paramAInput.value = paramARange.value;
+                });
+                
+                paramAInput.addEventListener('input', () => {
+                    paramARange.value = paramAInput.value;
+                });
+            }
+            
+            if (paramBRange && paramBInput) {
+                paramBRange.addEventListener('input', () => {
+                    paramBInput.value = paramBRange.value;
+                });
+                
+                paramBInput.addEventListener('input', () => {
+                    paramBRange.value = paramBInput.value;
+                });
+            }
+            
+            // Validate the sequence input to only allow A and B
+            if (sequenceInput) {
+                sequenceInput.addEventListener('input', () => {
+                    sequenceInput.value = sequenceInput.value.replace(/[^ABab]/g, '').toUpperCase();
+                    if (sequenceInput.value.length === 0) {
+                        sequenceInput.value = 'AB';
+                    }
+                });
+            }
+            
+            // Color schemes mapping
+            const colorSchemes = {
+                standard: 'standard', // Special handling for the standard Lyapunov coloring
+                rainbow: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#8f00ff'],
+                fire: ['#ff0000', '#ff5a00', '#ff9a00', '#ffce00', '#ffe808'],
+                ocean: ['#006994', '#0099db', '#87ceeb', '#2a52be', '#120a8f'],
+                monochrome: ['#ffffff', '#cccccc', '#999999', '#666666', '#333333']
+            };
+            
+            // Resize canvas to maintain aspect ratio
+            function resizeCanvas() {
+                if (!canvas) return;
+                const container = canvas.parentElement;
+                if (!container) return;
+                
+                const containerWidth = container.clientWidth - 40; // Accounting for padding
+                const aspectRatio = canvas.width / canvas.height;
+                
+                // Set new canvas display dimensions
+                if (containerWidth < canvas.width) {
+                    canvas.style.width = containerWidth + 'px';
+                    canvas.style.height = (containerWidth / aspectRatio) + 'px';
+                } else {
+                    canvas.style.width = '';
+                    canvas.style.height = '';
+                }
+            }
+            
+            // Initial resize and listen for window resize
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Clear the canvas
+            function clearCanvas() {
+                if (!ctx) return;
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // Generate the Lyapunov fractal
+            function generateLyapunovFractal() {
+                if (!canvas) return;
+                
+                // Get parameters from inputs
+                const iterations = iterationsInput ? parseInt(iterationsInput.value) : 100;
+                const sequence = sequenceInput ? sequenceInput.value.toUpperCase() : 'AB';
+                const paramA = paramAInput ? parseFloat(paramAInput.value) : 3.8;
+                const paramB = paramBInput ? parseFloat(paramBInput.value) : 3.4;
+                
+                // Initialize the fractal if not already created
+                if (!lyapunovFractal) {
+                    if (typeof window.LyapunovFractal === 'function') {
+                        lyapunovFractal = new window.LyapunovFractal('lyapunov-canvas', iterations);
+                    } else {
+                        console.error('LyapunovFractal class not found');
+                        return;
+                    }
+                }
+                
+                // Configure the fractal
+                if (typeof lyapunovFractal.setMaxIterations === 'function') {
+                    lyapunovFractal.setMaxIterations(iterations);
+                }
+                
+                if (typeof lyapunovFractal.setSequence === 'function') {
+                    lyapunovFractal.setSequence(sequence);
+                }
+                
+                // Generate the fractal
+                lyapunovFractal.generate();
+            }
+            
+            // Export the canvas as an image
+            function exportCanvasAsImage() {
+                if (!canvas) return;
+                const link = document.createElement('a');
+                link.download = 'lyapunov-fractal.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+            
+            // Add event listeners if buttons exist
+            if (generateButton) {
+                generateButton.addEventListener('click', function() {
+                    generateLyapunovFractal();
+                });
+            }
+            
+            if (resetButton) {
+                resetButton.addEventListener('click', function() {
+                    clearCanvas();
+                });
+            }
+            
+            if (exportButton) {
+                exportButton.addEventListener('click', exportCanvasAsImage);
+            }
+            
+            // Initialize the fractal with default parameters
+            // We'll use setTimeout to ensure the DOM is fully loaded
+            setTimeout(() => {
+                generateLyapunovFractal();
+            }, 200);
+        });
+    </script>
+</body>
+</html> 

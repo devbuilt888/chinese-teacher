@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Burning Ship - Editor</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/fractal-pages.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/header-fix.css">
+</head>
+<body>
+    <header>
+            <h1>Burning Ship Fractal</h1>
+    </header>
+    
+    <div class="container">
+        <div class="main-content">
+            <div class="editor-card">
+                <div class="card-header">
+                    <h2>Burning Ship Explorer</h2>
+        </div>
+                <div class="canvas-container">
+                    <canvas id="burning-canvas" width="800" height="600"></canvas>
+                </div>
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="iterations-input">Maximum Iterations</label>
+                        <input type="number" id="iterations-input" min="10" max="1000" step="10" value="100">
+                        <input type="range" id="iterations-range" min="10" max="1000" step="10" value="100">
+            </div>
+            
+                    <div class="control-group">
+                        <label for="zoom-input">Zoom Level</label>
+                        <input type="number" id="zoom-input" min="0.1" max="10" step="0.1" value="1">
+                        <input type="range" id="zoom-range" min="0.1" max="10" step="0.1" value="1">
+                    </div>
+                
+                <div class="control-group">
+                        <label for="center-x">Center X</label>
+                        <input type="number" id="center-x" value="-0.5" step="0.1">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="center-y">Center Y</label>
+                        <input type="number" id="center-y" value="-0.5" step="0.1">
+                </div>
+                
+                <div class="control-group">
+                        <label for="color-select">Color Scheme</label>
+                        <select id="color-select">
+                            <option value="classic">Classic</option>
+                            <option value="rainbow">Rainbow</option>
+                            <option value="fire">Fire</option>
+                            <option value="ocean">Ocean</option>
+                            <option value="monochrome">Monochrome</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <div class="button-row">
+                        <button id="generate-button"><span>Generate</span></button>
+                        <button id="reset-button"><span>Reset</span></button>
+                        <button id="export-button"><span>Export Image</span></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>About the Burning Ship Fractal</h3>
+                <p>
+                    The Burning Ship fractal is a fascinating variation of the Mandelbrot set, discovered by 
+                    Michael Michelitsch and Otto E. Rössler in 1992. It resembles a burning ship or a volcanic 
+                    island when viewed from the right angle.
+                </p>
+                <p>
+                    Unlike the Mandelbrot set, the Burning Ship fractal takes the absolute value of the real and 
+                    imaginary parts before squaring them in each iteration, creating a distinctly different and 
+                    visually striking pattern.
+                </p>
+                
+                <h3>Generation Method</h3>
+                <p>
+                    For each pixel on the screen representing a complex point c:
+                </p>
+                <ol>
+                    <li>Start with z = 0</li>
+                    <li>Repeatedly apply the formula z = (|Re(z)| + i|Im(z)|)² + c</li>
+                    <li>Count how many iterations it takes for |z| > 2 (the escape condition)</li>
+                    <li>Color the pixel based on this iteration count</li>
+                </ol>
+                
+                <h3>Mathematical Formula</h3>
+                <div class="formula">
+                    z_{n+1} = (|Re(z_n)| + i|Im(z_n)|)² + c
+                    
+                    Where:
+                    - z is a complex number
+                    - c is a complex constant (the point being tested)
+                    - The sequence starts with z₀ = 0
+                    - |Re(z)| is the absolute value of the real part of z
+                    - |Im(z)| is the absolute value of the imaginary part of z
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <button class="return-button" title="Return to Dashboard" onclick="window.location.href='/'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5"></path>
+            <path d="M12 19l-7-7 7-7"></path>
+        </svg>
+    </button>
+    
+    <!-- Debug panel -->
+    <div id="debug-info" class="debug-info"></div>
+    
+    <!-- Include the main JavaScript file for the fractal implementations -->
+    <script src="../../main.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Canvas setup
+            const canvas = document.getElementById('burning-canvas');
+            if (!canvas) {
+                console.error('Burning Ship canvas not found');
+                return;
+            }
+            const ctx = canvas.getContext('2d');
+            
+            // UI elements
+            const iterationsInput = document.getElementById('iterations-input');
+            const iterationsRange = document.getElementById('iterations-range');
+            const centerXInput = document.getElementById('center-x');
+            const centerYInput = document.getElementById('center-y');
+            const zoomInput = document.getElementById('zoom-input');
+            const zoomRange = document.getElementById('zoom-range');
+            const colorSelect = document.getElementById('color-select');
+            const generateButton = document.getElementById('generate-button');
+            const resetButton = document.getElementById('reset-button');
+            const exportButton = document.getElementById('export-button');
+            
+            // Burning Ship fractal instance
+            let burningShipFractal = null;
+            
+            // Only set up event listeners if elements exist
+            if (iterationsRange && iterationsInput) {
+                iterationsRange.addEventListener('input', () => {
+                    iterationsInput.value = iterationsRange.value;
+                });
+                
+                iterationsInput.addEventListener('input', () => {
+                    iterationsRange.value = iterationsInput.value;
+                });
+            }
+            
+            if (zoomRange && zoomInput) {
+                zoomRange.addEventListener('input', () => {
+                    zoomInput.value = zoomRange.value;
+                });
+                
+                zoomInput.addEventListener('input', () => {
+                    zoomRange.value = zoomInput.value;
+                });
+            }
+            
+            // Color schemes mapping
+            const colorSchemes = {
+                classic: ['#000000', '#0000BB', '#00BBBB', '#00FF00', '#BBBB00', '#FF0000'],
+                rainbow: ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#8f00ff'],
+                fire: ['#ff0000', '#ff5a00', '#ff9a00', '#ffce00', '#ffe808'],
+                ocean: ['#006994', '#0099db', '#87ceeb', '#2a52be', '#120a8f'],
+                monochrome: ['#ffffff', '#cccccc', '#999999', '#666666', '#333333']
+            };
+            
+            // Resize canvas to maintain aspect ratio
+            function resizeCanvas() {
+                if (!canvas) return;
+                const container = canvas.parentElement;
+                if (!container) return;
+                
+                const containerWidth = container.clientWidth - 40; // Accounting for padding
+                const aspectRatio = canvas.width / canvas.height;
+                
+                // Set new canvas display dimensions
+                if (containerWidth < canvas.width) {
+                    canvas.style.width = containerWidth + 'px';
+                    canvas.style.height = (containerWidth / aspectRatio) + 'px';
+                } else {
+                    canvas.style.width = '';
+                    canvas.style.height = '';
+                }
+            }
+            
+            // Initial resize and listen for window resize
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Clear the canvas
+            function clearCanvas() {
+                if (!ctx) return;
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // Get selected color scheme
+            function getColorScheme() {
+                if (!colorSelect) return colorSchemes.classic;
+                return colorSchemes[colorSelect.value] || colorSchemes.classic;
+            }
+            
+            // Generate the Burning Ship fractal
+            function generateBurningShipFractal() {
+                if (!canvas) return;
+                
+                // Get parameters from inputs
+                const iterations = iterationsInput ? parseInt(iterationsInput.value) : 100;
+                const zoom = zoomInput ? parseFloat(zoomInput.value) : 1;
+                const centerX = centerXInput ? parseFloat(centerXInput.value) : -0.5;
+                const centerY = centerYInput ? parseFloat(centerYInput.value) : -0.5;
+                
+                // Initialize the fractal if not already created
+                if (!burningShipFractal) {
+                    if (typeof window.BurningShipFractal === 'function') {
+                        burningShipFractal = new window.BurningShipFractal('burning-canvas', iterations);
+                    } else {
+                        console.error('BurningShipFractal class not found');
+                        return;
+                    }
+                }
+                
+                // Configure the fractal
+                if (typeof burningShipFractal.setMaxIterations === 'function') {
+                    burningShipFractal.setMaxIterations(iterations);
+                }
+                
+                if (typeof burningShipFractal.setZoom === 'function') {
+                    burningShipFractal.setZoom(zoom);
+                }
+                
+                if (typeof burningShipFractal.setCenter === 'function') {
+                    burningShipFractal.setCenter(centerX, centerY);
+                }
+                
+                // Generate the fractal
+                burningShipFractal.generate();
+            }
+            
+            // Export the canvas as an image
+            function exportCanvasAsImage() {
+                if (!canvas) return;
+                const link = document.createElement('a');
+                link.download = 'burning-ship.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+            
+            // Add event listeners if buttons exist
+            if (generateButton) {
+                generateButton.addEventListener('click', function() {
+                    generateBurningShipFractal();
+                });
+            }
+            
+            if (resetButton) {
+                resetButton.addEventListener('click', function() {
+                    clearCanvas();
+                });
+            }
+            
+            if (exportButton) {
+                exportButton.addEventListener('click', exportCanvasAsImage);
+            }
+            
+            // Initialize the fractal with default parameters
+            // We'll use setTimeout to ensure the DOM is fully loaded
+            setTimeout(() => {
+                generateBurningShipFractal();
+            }, 200);
+        });
+    </script>
+</body>
+</html> 
